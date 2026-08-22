@@ -11,97 +11,50 @@ bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/ins
 ## Управление — tgwebpr
 
 ```bash
-tgwebpr              # меню (чистый экран)
-tgwebpr status
-tgwebpr creds
-tgwebpr logs         # Ctrl+C возвращает в меню
+tgwebpr              # меню
+tgwebpr status       # состояние сервиса
+tgwebpr creds        # hostname и key для Telegram
+tgwebpr logs         # логи (Ctrl+C — выход)
 tgwebpr restart
-tgwebpr update       # если github.com не резолвится — rebuild с диска
-tgwebpr site         # сменить шаблон 1–6
-tgwebpr carrier      # режим транспорта (см. ниже)
-tgwebpr proxy        # backend, ad tag (@MTProxybot), ME pool
+tgwebpr update       # обновление с GitHub и пересборка
+tgwebpr site         # сменить HTML-шаблон сайта
+tgwebpr carrier      # режим транспорта
+tgwebpr proxy        # backend, рекламный канал, ME pool
 tgwebpr uninstall
 ```
 
-Конфиг: `/etc/default/tgwebpr`, код: `/opt/tg-web-proxy`.
+Код: `/opt/tg-web-proxy`, конфиг: `.env` в том же каталоге.
 
-## Telegram Desktop не грузит чаты
+## Подключение в Telegram
 
-Симптомы: сайт по HTTPS открывается, в TG «подключён», но сообщения не идут; при первом входе — *The built-in web transport couldn't connect*; вкладка браузера из TG показывает *Connected* и потом *Telegram Desktop disconnected*.
+Desktop **≥ 7.1.1** → Settings → Advanced → Proxy → Add Proxy → **WEB**.
 
-**Что происходит:** основной путь — встроенный WebView в Telegram Desktop. Вкладка браузера — запасной вариант, когда WebView не поднялся; её закрытие/разрыв с Desktop — нормальное поведение, это не «основной режим».
+Hostname и key: `tgwebpr creds` или ссылка `tg://webproxy?server=...&secret=...`.
 
-**Что сделать на сервере:**
+## Telegram «подключён», но чаты не грузятся
 
-```bash
-sudo tgwebpr update          # подтянет CARRIER_MODE=websocket и пересоберёт образ
-# или вручную:
-sudo tgwebpr carrier         # пункт 3 — websocket
-sudo tgwebpr restart
-```
+1. `tgwebpr status` — `Ready : да`, HTTPS открывается.
+2. `tgwebpr carrier` → **websocket** (режим по умолчанию для Desktop).
+3. `tgwebpr restart`
+4. В Telegram удалите старый WEB proxy и добавьте заново (`tgwebpr creds`).
 
-Проверка: `tgwebpr status` — строка `Carrier : websocket`, `Ready : да`.
+Если websocket блокируется провайдером — попробуйте `https-lanes` в `tgwebpr carrier`.
 
-В Telegram: Settings → Advanced → Proxy → удалить старый WEB proxy и добавить заново (`tgwebpr creds`). Desktop **≥ 7.1.1**.
+## Рекламный канал (promo)
 
-| Режим carrier | Когда |
-|---|---|
-| `websocket` | Telegram Desktop (рекомендуется) |
-| `https-lanes` | если websocket блокируется, но HTTP проходит |
-| `https` | совместимость, на Desktop часто «подключён без трафика» |
+Через [@MTProxybot](https://t.me/MTProxybot):
 
-## MTProxy / telemt — ad tag и backend
+1. Добавьте прокси: **ваш домен:443** и secret из `tgwebpr creds` (это WEB proxy, не обычный `tg://proxy`).
+2. Получите ad tag (32 hex) → `tgwebpr proxy` → пункт 4.
+3. В боте: `/myproxies` → **Set promotion** → публичная ссылка на канал.
 
-Рекламный канал (promo) задаётся через [@MTProxybot](https://t.me/MTProxybot) — 32 hex-символа:
+**WEB proxy ≠ обычный MTProxy:** ссылка для пользователей — `tg://webproxy?...`, не `tg://proxy?...` из бота.
 
-```bash
-tgwebpr proxy          # пункт 4 — ad tag
-```
+Если канал не виден: проверьте с другого аккаунта (если уже подписаны — Telegram не показывает promo), подождите до часа, переподключите WEB proxy в Telegram.
 
-**Важно — WEB proxy ≠ обычный MTProxy:**
+## Сайт на домене
 
-| | Обычный `tg://proxy` | WEB `tg://webproxy` |
-|---|---|---|
-| Регистрация в боте | IP:443 + secret | **домен:443** + **WEB secret** (`tgwebpr creds`) |
-| Ссылка для юзеров | `tg://proxy?...` | `tg://webproxy?...` — **не** ссылка из бота |
-| ME pool (telemt) | — | **нужен `true`**, если задан ad tag |
-
-**Почему канал не виден:**
-
-1. В боте зарегистрирован старый MTProxy, а клиенты сидят на **WEB** — добавьте прокси заново: `tweb.kurduk.store:443` и secret из `tgwebpr creds`.
-2. В боте: `/myproxies` → ваш сервер → **Set promotion** → публичная ссылка на канал (не private).
-3. **`TELEMT_MIDDLE_PROXY=true`** — включается автоматически при `MTPROXY_AD_TAG`; без ME pool ad tag в telemt не работает.
-4. Если вы **уже подписаны** на promo-канал — Telegram его не показывает (проверьте с другого аккаунта).
-5. Обновление на серверах Telegram — до **~1 часа**.
-6. Desktop WEB — sponsored channel привязан к backend tag; если после пунктов 1–4 не появился, проверьте `docker exec tg-web-proxy cat /etc/telemt/telemt.toml | grep ad_tag`.
-
-После смены ad tag: `tgwebpr proxy` (пункт 4) — контейнер пересоздаётся.  
-Если перед этим делали `git pull` — **`tgwebpr update`** (пересборка образа с `--build`), иначе старый `entrypoint.sh` не подставит `ad_tag` в telemt.
-
-```bash
-tgwebpr update       # git pull + docker compose up -d --build --force-recreate
-tgwebpr proxy        # пункт 4 — ad tag
-```
-
-Проверка:
-
-```bash
-docker exec tg-web-proxy grep -E 'ad_tag|use_middle_proxy' /etc/telemt/telemt.toml
-```
-
-Переподключите WEB proxy в Telegram.
-
-Там же в `tgwebpr proxy`:
-- **backend** — `telemt` (рекомендуется) или `mtproxy` (official)
-- **carrier** — `websocket` для Desktop
-- **ME pool** — middle-end proxy в telemt (`true`/`false`, по умолчанию `false`)
-
-После смены — контейнер перезапускается автоматически.
-
-## Шаг «сайт на домене» при установке
-
-Пункты 1–6 — готовые HTML-страницы. Они открываются по `https://ваш-домен/` в браузере.  
-На WEB-прокси это не влияет — только то, что увидит тот, кто зайдёт на сайт.
+При установке выбирается HTML-шаблон — он открывается по `https://ваш-домен/` в браузере. На работу прокси не влияет, это только «обложка». Список шаблонов: `tgwebpr site`.
 
 ## Без Docker
 
@@ -112,31 +65,13 @@ sudo bash deploy/install.sh \
   --site-dir "$PWD/web/sites/studio-garden"
 ```
 
-## Косяки
+## Частые проблемы
 
-| Что | Что делать |
+| Симптом | Что сделать |
 |---|---|
-| При установке `load_site_catalog: command not found` / `SITE_IDS: unbound variable` | обновите установщик (`git pull` в репо) или укажите сайт флагом: `--site speedtest`; шаблон выбирается **после** `git clone` |
-| Docker не найден / не запущен | на шаге 2 установщик спросит: установить или запустить; отказ — выход; `-y` — без вопроса |
-| Permission denied на `./scripts` | `bash script.sh` или one-liner выше |
-| 80/443 заняты | убрать nginx/caddy на хосте |
-| Connecting в TG | `tgwebpr creds` — сверить hostname/key |
-| Подключён, но пусто | `BACKEND=telemt` в `.env` + `tgwebpr update`; переподключить proxy в TG |
-| `docker.io ... network is unreachable` (IPv6) | убрали лишний pull в Dockerfile; если снова — отключить IPv6 на VPS (см. ниже) |
-
-### Docker build: `registry-1.docker.io ... network is unreachable`
-
-На VPS без рабочего IPv6 Docker иногда лезет в Hub по IPv6 и падает. После `git pull` / обновления кода пересоберите:
-
-```bash
-cd /opt/tg-web-proxy && docker compose --env-file .env build
-```
-
-Если ошибка осталась — временно отключите IPv6 и перезапустите Docker:
-
-```bash
-sysctl -w net.ipv6.conf.all.disable_ipv6=1
-sysctl -w net.ipv6.conf.default.disable_ipv6=1
-systemctl restart docker
-cd /opt/tg-web-proxy && docker compose --env-file .env build && docker compose --env-file .env up -d
-```
+| Docker не найден | установщик предложит установку на шаге 2; можно отказаться и поставить Docker вручную |
+| 80/443 заняты | освободите порты (nginx/apache/caddy на хосте) |
+| Connecting в TG | `tgwebpr creds` — сверить hostname и key |
+| Подключён, но пусто | `tgwebpr carrier` → websocket, `tgwebpr restart`, пересоздать proxy в Telegram |
+| Promo не появился | зарегистрировать WEB proxy в @MTProxybot, ad tag в `tgwebpr proxy`, Set promotion |
+| Ошибка сборки Docker (network unreachable) | `tgwebpr update`; на VPS без IPv6 — отключить IPv6 и перезапустить Docker |

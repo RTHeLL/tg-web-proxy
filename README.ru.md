@@ -10,22 +10,20 @@ DNS: `A` домена → IP сервера. Порты 80/443 свободны.
 bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/install.sh)
 ```
 
-Спросит домен, email, номер сайта-обложки, сгенерирует key.
+Спросит домен, email, шаблон сайта-обложки, сгенерирует key.
 
 ## Управление
-
-После установки:
 
 ```bash
 tgwebpr            # меню
 tgwebpr status
 tgwebpr creds      # hostname + key
-tgwebpr logs       # Ctrl+C → обратно в меню
+tgwebpr logs
 tgwebpr restart
-tgwebpr update     # git pull (если DNS ок) + rebuild
-tgwebpr site       # сменить HTML-шаблон (12+ вариантов)
-tgwebpr carrier    # режим транспорта (websocket для Desktop)
-tgwebpr proxy        # backend telemt/mtproxy, ad tag, ME pool
+tgwebpr update
+tgwebpr site       # сменить HTML-шаблон
+tgwebpr carrier    # режим транспорта
+tgwebpr proxy      # backend, ad tag, ME pool
 tgwebpr uninstall
 ```
 
@@ -35,19 +33,10 @@ tgwebpr uninstall
 bash <(curl -fsSL .../install.sh) \
   --hostname tweb.example.com \
   --email you@example.com \
-  --site 2 \
+  --site speedtest \
   -y
 ```
 
-`--site` — номер 1–6 или id (`craft-roastery`).
-
-| № | id |
-|---|---|
-| 1 | northwind-field |
-| 2 | studio-garden |
-| 3 | atlas-books |
-| 4 | harbor-dental |
-| 5 | craft-roastery |
-| 6 | pixel-repair |
+`--site` — id папки из `web/sites/` (например `speedtest`, `games-site`) или номер из меню установщика.
 
 Подробнее: [DEPLOY.ru.md](DEPLOY.ru.md)
