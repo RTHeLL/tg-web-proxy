@@ -185,6 +185,7 @@ interactive_setup() {
 		"Hostname : $hostname" \
 		"Email    : $email" \
 		"Site     : ${site:-выбор после git clone}" \
+		"Docker   : $(docker_status_hint)" \
 		"Каталог  : $INSTALL_DIR"
 
 	if [[ "$assume_yes" -eq 0 ]]; then
@@ -221,31 +222,102 @@ port_busy() {
 	fi
 }
 
+docker_has_cli() {
+	command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1
+}
+
+docker_daemon_running() {
+	docker info >/dev/null 2>&1
+}
+
+docker_status_hint() {
+	if docker_has_cli && docker_daemon_running; then
+		printf '%s' "$(docker --version 2>/dev/null | head -1 | cut -d, -f1)"
+	elif docker_has_cli; then
+		printf '%s' 'установлен, не запущен'
+	else
+		printf '%s' 'не найден'
+	fi
+}
+
+confirm_docker_action() {
+	local prompt="$1"
+	if [[ "$assume_yes" -eq 1 ]]; then
+		return 0
+	fi
+	ui_ask_yes "$prompt" 'y'
+}
+
+start_docker_daemon() {
+	ui_spin 'запускаю docker'
+	if command -v systemctl >/dev/null 2>&1; then
+		systemctl enable --now docker >/dev/null 2>&1 || systemctl start docker
+	elif command -v service >/dev/null 2>&1; then
+		service docker start
+	else
+		ui_spin_done
+		ui_fail 'не могу запустить docker — нет systemctl/service'
+		return 1
+	fi
+	ui_spin_done
+	docker_daemon_running
+}
+
+install_docker_packages() {
+	ui_spin 'ставлю docker (get.docker.com)'
+	export DEBIAN_FRONTEND=noninteractive
+	if command -v apt-get >/dev/null 2>&1; then
+		apt-get update -qq
+		apt-get install -y -qq --no-install-recommends ca-certificates curl gnupg
+	fi
+	curl -fsSL https://get.docker.com | sh
+	if command -v apt-get >/dev/null 2>&1 && ! docker compose version >/dev/null 2>&1; then
+		apt-get install -y -qq --no-install-recommends docker-compose-plugin || true
+	fi
+	if command -v systemctl >/dev/null 2>&1; then
+		systemctl enable --now docker >/dev/null 2>&1 || true
+	fi
+	ui_spin_done
+}
+
 ensure_docker() {
 	ui_step 2 5 'Docker'
-	if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+
+	if docker_has_cli && docker_daemon_running; then
 		ui_ok "$(docker --version | head -1)"
 		return 0
 	fi
-	ui_warn 'docker не найден — ставлю через get.docker.com'
-	if ! command -v apt-get >/dev/null 2>&1; then
-		ui_fail 'автоустановка только для Debian/Ubuntu; docker поставь руками'
+
+	if docker_has_cli && ! docker_daemon_running; then
+		ui_warn 'Docker установлен, но служба не запущена'
+		if ! confirm_docker_action 'Запустить Docker сейчас?'; then
+			ui_fail 'нужен запущенный Docker — установка отменена'
+			exit 1
+		fi
+		if ! start_docker_daemon; then
+			ui_fail 'не удалось запустить docker — проверь: systemctl status docker'
+			exit 1
+		fi
+		ui_ok 'docker запущен'
+		return 0
+	fi
+
+	ui_warn 'Docker не найден (нужны docker и compose plugin)'
+	ui_info 'Будет установка через официальный скрипт get.docker.com'
+	if ! confirm_docker_action 'Установить Docker автоматически?'; then
+		ui_fail 'нужен Docker — установка отменена'
 		exit 1
 	fi
-	ui_spin 'ставлю docker'
-	export DEBIAN_FRONTEND=noninteractive
-	apt-get update -qq
-	apt-get install -y -qq --no-install-recommends ca-certificates curl gnupg
-	curl -fsSL https://get.docker.com | sh
-	if ! docker compose version >/dev/null 2>&1; then
-		apt-get install -y -qq --no-install-recommends docker-compose-plugin || true
-	fi
-	ui_spin_done
-	if ! docker compose version >/dev/null 2>&1; then
-		ui_fail 'compose так и не появился'
+	if ! command -v curl >/dev/null 2>&1; then
+		ui_fail 'нужен curl для установки Docker'
 		exit 1
 	fi
-	ui_ok 'docker готов'
+	install_docker_packages
+	if ! docker_has_cli || ! docker_daemon_running; then
+		ui_fail 'Docker не поднялся — проверь логи: journalctl -u docker'
+		exit 1
+	fi
+	ui_ok 'docker установлен и запущен'
 }
 
 ensure_repo() {
@@ -296,7 +368,8 @@ else
 		ui_box 'Параметры' \
 			"Hostname : $hostname" \
 			"Email    : $email" \
-			"Site     : $site"
+			"Site     : $site" \
+			"Docker   : $(docker_status_hint)"
 		ui_ask_yes 'Продолжить?' 'y' || exit 0
 	fi
 fi
@@ -317,6 +390,7 @@ if [[ "$dry_run" -eq 1 ]]; then
 		"hostname=$hostname" \
 		"email=$email" \
 		"site=${site:-studio-garden}" \
+		"docker=$(docker_status_hint)" \
 		"dir=$INSTALL_DIR"
 	exit 0
 fi
