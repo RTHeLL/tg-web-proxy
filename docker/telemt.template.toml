@@ -5,6 +5,9 @@ fast_mode = true
 prefer_ipv6 = false
 log_level = "normal"
 
+[general.links]
+show = []
+
 [general.modes]
 classic = __TELEMT_CLASSIC__
 secure = __TELEMT_SECURE__
@@ -16,6 +19,10 @@ listen_addr_ipv4 = "127.0.0.1"
 
 [server.api]
 enabled = false
+
+[censorship]
+mask = false
+tls_emulation = false
 
 [access.users]
 web = "__TPROXY_SECRET_HEX__"

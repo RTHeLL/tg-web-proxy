@@ -27,7 +27,7 @@ ARG CADDY_SHA512=8220d1f013b6f27510247b2360c9e0ca9f018feebd82515f07635318b34ff97
 ARG TELEMT_VERSION=3.5.0
 ARG TELEMT_SHA256=68849c4c885a017ef8d783937e2e96d2910567d49703dde4c9b6c544e374bf74
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends ca-certificates curl gettext-base \
+	&& apt-get install -y --no-install-recommends ca-certificates curl gettext-base netcat-openbsd \
 	&& rm -rf /var/lib/apt/lists/*
 RUN curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
 		--output /tmp/caddy.tar.gz "https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_linux_amd64.tar.gz" \

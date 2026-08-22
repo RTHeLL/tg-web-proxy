@@ -50,7 +50,7 @@ wait_tcp() {
 	attempts="${3:-90}"
 	i=0
 	while [ "$i" -lt "$attempts" ]; do
-		if curl --silent --max-time 1 "telnet://${host}:${port}" >/dev/null 2>&1; then
+		if nc -z "$host" "$port" 2>/dev/null; then
 			return 0
 		fi
 		i=$((i + 1))
@@ -141,6 +141,7 @@ if [ "$ready" -ne 1 ]; then
 	echo "tproxy-server did not become ready" >&2
 	exit 1
 fi
+log "relay ready on :8080/:8081"
 
 cleanup() {
 	log "shutting down"
