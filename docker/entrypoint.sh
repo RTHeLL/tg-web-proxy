@@ -2,7 +2,7 @@
 set -eu
 
 log() {
-	printf '[entrypoint] %s\n' "$1"
+	printf '[entrypoint] %s\n' "$1" >&2
 }
 
 require_env() {
@@ -44,6 +44,21 @@ write_telemt_config() {
 	chmod 0640 /etc/telemt/telemt.toml
 }
 
+wait_tcp() {
+	host="$1"
+	port="$2"
+	attempts="${3:-90}"
+	i=0
+	while [ "$i" -lt "$attempts" ]; do
+		if curl --silent --max-time 1 "telnet://${host}:${port}" >/dev/null 2>&1; then
+			return 0
+		fi
+		i=$((i + 1))
+		sleep 1
+	done
+	return 1
+}
+
 start_mtproxy() {
 	if [ ! -f /etc/mtproxy/proxy-secret ]; then
 		log "downloading MTProxy secret"
@@ -67,14 +82,14 @@ start_mtproxy() {
 		/etc/mtproxy/proxy-multi.conf \
 		-M "${MTPROXY_WORKERS:-1}" \
 		-C "${MTPROXY_MAX_CONNECTIONS:-4096}" &
-	printf '%s' "$!"
+	backend_pid=$!
 }
 
 start_telemt() {
 	write_telemt_config
 	log "starting telemt backend on 127.0.0.1:2398"
 	/usr/local/bin/telemt /etc/telemt/telemt.toml &
-	printf '%s' "$!"
+	backend_pid=$!
 }
 
 export TPROXY_HOSTNAME ACME_EMAIL TPROXY_SECRET
@@ -93,10 +108,18 @@ chmod 0400 /etc/tproxy-server/profiles.json
 	-profiles-file /etc/tproxy-server/profiles.json \
 	-check
 
+backend_pid=0
 case "$BACKEND" in
-	telemt) backend_pid="$(start_telemt)" ;;
-	mtproxy|official|*) backend_pid="$(start_mtproxy)" ;;
+	telemt) start_telemt ;;
+	mtproxy|official|*) start_mtproxy ;;
 esac
+
+log "waiting for backend on 127.0.0.1:2398"
+if ! wait_tcp 127.0.0.1 2398 90; then
+	echo "backend did not open 127.0.0.1:2398" >&2
+	exit 1
+fi
+log "backend is listening on :2398"
 
 log "starting tproxy-server relay"
 /usr/local/bin/tproxy-server \
