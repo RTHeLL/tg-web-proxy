@@ -70,7 +70,7 @@ sudo bash deploy/install.sh \
 | Permission denied на `./scripts` | `bash script.sh` или one-liner выше |
 | 80/443 заняты | убрать nginx/caddy на хосте |
 | Connecting в TG | `tgwebpr creds` — сверить hostname/key |
-| Подключён, но пусто | `tgwebpr carrier` → websocket + переподключить proxy в TG |
+| Подключён, но пусто | `BACKEND=telemt` в `.env` + `tgwebpr update`; переподключить proxy в TG |
 | `docker.io ... network is unreachable` (IPv6) | убрали лишний pull в Dockerfile; если снова — отключить IPv6 на VPS (см. ниже) |
 
 ### Docker build: `registry-1.docker.io ... network is unreachable`

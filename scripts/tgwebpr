@@ -87,6 +87,17 @@ ensure_carrier_env() {
 	compose up -d >/dev/null 2>&1 || compose restart tproxy >/dev/null 2>&1 || true
 }
 
+ensure_backend_env() {
+	local engine="${1:-telemt}"
+	[[ -f "$INSTALL_DIR/.env" ]] || return 0
+	if grep -q '^BACKEND=' "$INSTALL_DIR/.env" 2>/dev/null; then
+		return 0
+	fi
+	printf 'BACKEND=%s\n' "$engine" >>"$INSTALL_DIR/.env"
+	chmod 0600 "$INSTALL_DIR/.env"
+	ui_info "добавлен BACKEND=${engine} — нужен rebuild: tgwebpr update"
+}
+
 set_carrier_mode() {
 	local mode="$1"
 	local valid=0 m
@@ -153,6 +164,7 @@ cmd_status() {
 	load_env
 	require_root
 	ensure_carrier_env websocket
+	ensure_backend_env telemt
 	# shellcheck disable=SC1091
 	set -a; source "$INSTALL_DIR/.env" 2>/dev/null || true; set +a
 	ui_out "  ${UI_DIM}проверяю…${UI_RESET}\n"
@@ -185,6 +197,7 @@ cmd_status() {
 	backend='?'
 	bytes_up=''
 	bytes_down=''
+	relay_status='?'
 	if metrics="$(timeout 5 docker exec tg-web-proxy curl --silent --max-time 3 \
 		http://127.0.0.1:8081/metrics 2>/dev/null)"; then
 		failures="$(printf '%s\n' "$metrics" | awk -F' ' '/^tproxy_backend_dial_failures_total /{print $2; exit}')"
@@ -192,15 +205,16 @@ cmd_status() {
 		bytes_up="$(printf '%s\n' "$metrics" | awk -F' ' '/^tproxy_bytes_up_total /{print $2; exit}')"
 		bytes_down="$(printf '%s\n' "$metrics" | awk -F' ' '/^tproxy_bytes_down_total /{print $2; exit}')"
 		if [[ -n "${failures:-}" && "${failures}" != "0" ]]; then
-			backend="dial_failures=${failures}"
+			relay_status="dial_failures=${failures}"
 		elif [[ -n "${sessions:-}" && "${sessions}" != "0" ]]; then
-			backend="sessions=${sessions}"
+			relay_status="sessions=${sessions}"
 		else
-			backend='ok'
+			relay_status='ok'
 		fi
 	fi
 
 	carrier="${CARRIER_MODE:-?}"
+	backend_engine="${BACKEND:-telemt}"
 	carrier_hint=''
 	if [[ "${carrier}" == "https" ]]; then
 		carrier_hint=' · для Desktop лучше: tgwebpr carrier'
@@ -210,26 +224,27 @@ cmd_status() {
 		"Hostname : ${TPROXY_HOSTNAME}" \
 		"Site     : ${SITE_VARIANT:-?}" \
 		"Carrier  : ${carrier}${carrier_hint}" \
+		"Engine   : ${backend_engine} → :2398" \
 		"Контейнер: ${container}" \
-		"Ready    : ${ready} (relay + MTProxy :2398)" \
+		"Ready    : ${ready}" \
 		"HTTPS    : ${https}" \
-		"Backend  : ${backend}" \
+		"Relay    : ${relay_status}" \
 		"Traffic  : up=${bytes_up:-?} down=${bytes_down:-?} bytes"
 
 	if [[ "$ready" == "да" ]]; then
 		if [[ "$https" == "нет" ]]; then
 			ui_warn 'HTTPS-проверка не прошла — если сайт открывается в браузере, это ложный минус'
 		fi
-		if [[ "$https" == да* && "${backend}" == "ok" ]]; then
+		if [[ "$https" == да* && "${relay_status}" == "ok" ]]; then
 			ui_ok 'стек в порядке — переподключите WEB proxy в Telegram (tgwebpr creds)'
 		fi
 		ui_info 'если TG «подключён», но чаты пустые — пересоздайте proxy в Settings → Advanced → Proxy'
-		if [[ "${backend:-}" == dial_failures=* && "${backend#dial_failures=}" != "0" ]]; then
-			ui_warn 'relay не всегда достучался до MTProxy :2398 — tgwebpr restart'
+		if [[ "${relay_status:-}" == dial_failures=* && "${relay_status#dial_failures=}" != "0" ]]; then
+			ui_warn 'relay не всегда достучался до backend :2398 — tgwebpr restart'
 		fi
 		if [[ -n "${bytes_up:-}" && -n "${bytes_down:-}" && "${bytes_up}" -gt 10000 && "${bytes_down}" -lt 10000 ]]; then
-			ui_warn 'мало downlink — MTProxy, вероятно, не ходит в DC Telegram (сеть VPS?)'
-			ui_info 'проверка: docker exec tg-web-proxy sh -c "timeout 3 bash -c \"echo >/dev/tcp/149.154.175.50/8888\" && echo DC ok || echo DC fail"'
+			ui_warn 'мало downlink — backend не отдаёт ответы из Telegram'
+			ui_info 'попробуйте BACKEND=telemt в .env и tgwebpr update'
 		fi
 	fi
 
@@ -301,6 +316,7 @@ cmd_update() {
 	fi
 
 	ensure_carrier_env websocket
+	ensure_backend_env telemt
 
 	ui_out "  ${UI_DIM}docker compose build…${UI_RESET}\n"
 	compose build
@@ -363,6 +379,7 @@ cmd_carrier() {
 	require_root
 	load_env
 	ensure_carrier_env websocket
+	ensure_backend_env telemt
 	# shellcheck disable=SC1091
 	set -a; source "$INSTALL_DIR/.env" 2>/dev/null || true; set +a
 	ui_out "\n${UI_BOLD}Режим carrier (транспорт Telegram)${UI_RESET}\n"

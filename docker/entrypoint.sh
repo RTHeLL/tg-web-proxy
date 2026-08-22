@@ -19,26 +19,63 @@ require_env ACME_EMAIL
 require_env TPROXY_SECRET
 
 : "${CARRIER_MODE:=websocket}"
-export CARRIER_MODE
+: "${BACKEND:=telemt}"
+export CARRIER_MODE BACKEND
 
-mkdir -p /etc/mtproxy /etc/tproxy-server /etc/caddy /srv/tproxy-site
-
-if [ ! -f /etc/mtproxy/proxy-secret ]; then
-	log "downloading MTProxy secret"
-	curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
-		--output /etc/mtproxy/proxy-secret https://core.telegram.org/getProxySecret
-fi
-if [ ! -f /etc/mtproxy/proxy-multi.conf ]; then
-	log "downloading MTProxy config"
-	curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
-		--output /etc/mtproxy/proxy-multi.conf https://core.telegram.org/getProxyConfig
-fi
-chmod 0640 /etc/mtproxy/proxy-secret /etc/mtproxy/proxy-multi.conf
+mkdir -p /etc/mtproxy /etc/tproxy-server /etc/caddy /etc/telemt /srv/tproxy-site
 
 backend_secret="$TPROXY_SECRET"
+telemt_classic=true
+telemt_secure=false
 case "$backend_secret" in
-	dd*) backend_secret="${backend_secret#dd}" ;;
+	dd*)
+		backend_secret="${backend_secret#dd}"
+		telemt_classic=false
+		telemt_secure=true
+		;;
 esac
+
+write_telemt_config() {
+	sed \
+		-e "s/__TELEMT_CLASSIC__/${telemt_classic}/" \
+		-e "s/__TELEMT_SECURE__/${telemt_secure}/" \
+		-e "s/__TPROXY_SECRET_HEX__/${backend_secret}/" \
+		/etc/telemt/telemt.template.toml > /etc/telemt/telemt.toml
+	chmod 0640 /etc/telemt/telemt.toml
+}
+
+start_mtproxy() {
+	if [ ! -f /etc/mtproxy/proxy-secret ]; then
+		log "downloading MTProxy secret"
+		curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+			--output /etc/mtproxy/proxy-secret https://core.telegram.org/getProxySecret
+	fi
+	if [ ! -f /etc/mtproxy/proxy-multi.conf ]; then
+		log "downloading MTProxy config"
+		curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+			--output /etc/mtproxy/proxy-multi.conf https://core.telegram.org/getProxyConfig
+	fi
+	chmod 0640 /etc/mtproxy/proxy-secret /etc/mtproxy/proxy-multi.conf
+
+	log "starting MTProxy backend (official)"
+	/usr/local/bin/mtproto-proxy \
+		-u nobody \
+		-p 8888 \
+		-H 2398 \
+		-S "$backend_secret" \
+		--aes-pwd /etc/mtproxy/proxy-secret \
+		/etc/mtproxy/proxy-multi.conf \
+		-M "${MTPROXY_WORKERS:-1}" \
+		-C "${MTPROXY_MAX_CONNECTIONS:-4096}" &
+	printf '%s' "$!"
+}
+
+start_telemt() {
+	write_telemt_config
+	log "starting telemt backend on 127.0.0.1:2398"
+	/usr/local/bin/telemt /etc/telemt/telemt.toml &
+	printf '%s' "$!"
+}
 
 export TPROXY_HOSTNAME ACME_EMAIL TPROXY_SECRET
 mkdir -p /data/caddy
@@ -56,17 +93,10 @@ chmod 0400 /etc/tproxy-server/profiles.json
 	-profiles-file /etc/tproxy-server/profiles.json \
 	-check
 
-log "starting MTProxy backend"
-/usr/local/bin/mtproto-proxy \
-	-u nobody \
-	-p 8888 \
-	-H 2398 \
-	-S "$backend_secret" \
-	--aes-pwd /etc/mtproxy/proxy-secret \
-	/etc/mtproxy/proxy-multi.conf \
-	-M "${MTPROXY_WORKERS:-1}" \
-	-C "${MTPROXY_MAX_CONNECTIONS:-4096}" &
-mtproxy_pid=$!
+case "$BACKEND" in
+	telemt) backend_pid="$(start_telemt)" ;;
+	mtproxy|official|*) backend_pid="$(start_mtproxy)" ;;
+esac
 
 log "starting tproxy-server relay"
 /usr/local/bin/tproxy-server \
@@ -91,10 +121,10 @@ fi
 
 cleanup() {
 	log "shutting down"
-	kill "$relay_pid" "$mtproxy_pid" 2>/dev/null || true
-	wait "$relay_pid" "$mtproxy_pid" 2>/dev/null || true
+	kill "$relay_pid" "$backend_pid" 2>/dev/null || true
+	wait "$relay_pid" "$backend_pid" 2>/dev/null || true
 }
 trap cleanup INT TERM
 
-log "starting Caddy on :80/:443 for https://${TPROXY_HOSTNAME}/"
+log "starting Caddy on :80/:443 for https://${TPROXY_HOSTNAME}/ (backend=${BACKEND})"
 exec /usr/local/bin/caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
