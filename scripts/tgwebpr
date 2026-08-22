@@ -183,10 +183,14 @@ cmd_status() {
 	fi
 
 	backend='?'
+	bytes_up=''
+	bytes_down=''
 	if metrics="$(timeout 5 docker exec tg-web-proxy curl --silent --max-time 3 \
 		http://127.0.0.1:8081/metrics 2>/dev/null)"; then
 		failures="$(printf '%s\n' "$metrics" | awk -F' ' '/^tproxy_backend_dial_failures_total /{print $2; exit}')"
 		sessions="$(printf '%s\n' "$metrics" | awk -F' ' '/^tproxy_sessions_live /{print $2; exit}')"
+		bytes_up="$(printf '%s\n' "$metrics" | awk -F' ' '/^tproxy_bytes_up_total /{print $2; exit}')"
+		bytes_down="$(printf '%s\n' "$metrics" | awk -F' ' '/^tproxy_bytes_down_total /{print $2; exit}')"
 		if [[ -n "${failures:-}" && "${failures}" != "0" ]]; then
 			backend="dial_failures=${failures}"
 		elif [[ -n "${sessions:-}" && "${sessions}" != "0" ]]; then
@@ -209,7 +213,8 @@ cmd_status() {
 		"Контейнер: ${container}" \
 		"Ready    : ${ready} (relay + MTProxy :2398)" \
 		"HTTPS    : ${https}" \
-		"Backend  : ${backend}"
+		"Backend  : ${backend}" \
+		"Traffic  : up=${bytes_up:-?} down=${bytes_down:-?} bytes"
 
 	if [[ "$ready" == "да" ]]; then
 		if [[ "$https" == "нет" ]]; then
@@ -220,7 +225,11 @@ cmd_status() {
 		fi
 		ui_info 'если TG «подключён», но чаты пустые — пересоздайте proxy в Settings → Advanced → Proxy'
 		if [[ "${backend:-}" == dial_failures=* && "${backend#dial_failures=}" != "0" ]]; then
-			ui_warn 'MTProxy не достучался до DC Telegram — проверьте исходящий трафик VPS'
+			ui_warn 'relay не всегда достучался до MTProxy :2398 — tgwebpr restart'
+		fi
+		if [[ -n "${bytes_up:-}" && -n "${bytes_down:-}" && "${bytes_up}" -gt 10000 && "${bytes_down}" -lt 10000 ]]; then
+			ui_warn 'мало downlink — MTProxy, вероятно, не ходит в DC Telegram (сеть VPS?)'
+			ui_info 'проверка: docker exec tg-web-proxy sh -c "timeout 3 bash -c \"echo >/dev/tcp/149.154.175.50/8888\" && echo DC ok || echo DC fail"'
 		fi
 	fi
 
