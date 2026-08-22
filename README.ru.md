@@ -12,7 +12,7 @@ DNS: `A` на IP сервера. Порты 80/443 свободны. Запус�
 bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/install.sh)
 ```
 
-Без флагов скрипт сам спросит hostname, email и какой сайт показывать. Можно и так:
+Скрипт задаст вопросы по шагам (домен → email → сайт → ключ). Флаги `--hostname`, `--email`, `--site`, `-y` — если без диалога.
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/install.sh) \

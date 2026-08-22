@@ -77,64 +77,106 @@ else
 	ui_credentials_box() { ui_box 'Готово' "hostname=$1" "secret=$2" "site=$3"; }
 fi
 
+normalize_hostname() {
+	local h="$1"
+	h="${h//$'\r'/}"
+	h="${h#"${h%%[![:space:]]*}"}"
+	h="${h%"${h##*[![:space:]]}"}"
+	h="${h,,}"
+	h="${h#https://}"
+	h="${h#http://}"
+	h="${h%%/*}"
+	h="${h%%:*}"
+	h="${h%.}"
+	printf '%s' "$h"
+}
+
 validate_hostname() {
-	[[ "$1" =~ ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$ && "$1" == *.* ]]
+	local h err=""
+	h="$(normalize_hostname "$1")"
+	[[ -n "$h" ]] || { err='пусто'; printf '%s' "$err"; return 1; }
+	[[ "$h" == *.* ]] || { err='нужен домен с точкой, например tweb.kurduk.store'; printf '%s' "$err"; return 1; }
+	[[ ${#h} -le 253 ]] || { err='слишком длинный'; printf '%s' "$err"; return 1; }
+	[[ "$h" =~ ^[a-z0-9]([a-z0-9-]*(\.[a-z0-9-]+)+)*$ ]] || { err='только a-z, 0-9, дефис и точки; без https:// и слэшей'; printf '%s' "$err"; return 1; }
+	printf '%s' "$h"
+	return 0
 }
 
 validate_email() {
-	[[ "$1" =~ ^[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]
+	local e="$1"
+	e="${e//$'\r'/}"
+	e="${e#"${e%%[![:space:]]*}"}"
+	e="${e%"${e##*[![:space:]]}"}"
+	[[ "$e" =~ ^[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]
 }
 
 interactive_setup() {
 	ui_banner
-	ui_info 'Нужен root, x86_64, DNS A на этот сервер, порты 80/443 свободны.'
+	ui_intro
 	ui_line
 
+	ui_out "${UI_BOLD}Шаг 1 из 4 · домен для WEB proxy${UI_RESET}\n"
+	ui_info 'Тот же hostname, что в DNS A-записи и в Telegram Desktop.'
+	ui_info 'Пример: tweb.kurduk.store (без https:// и без :443)'
+
 	while [[ -z "$hostname" ]]; do
-		hostname="$(ui_ask 'Hostname для WEB proxy (без https://)' '')"
-		if ! validate_hostname "$hostname"; then
-			ui_warn 'нужен нормальный fqdn, маленькими буквами: proxy.example.com'
-			hostname=""
+		raw="$(ui_ask 'Hostname' '')"
+		if normalized="$(validate_hostname "$raw")"; then
+			hostname="$normalized"
+		else
+			ui_warn "$normalized"
+			[[ -n "$raw" ]] && ui_info "введено: «${raw}»"
 		fi
 	done
+	ui_ok "hostname: $hostname"
+
+	ui_out "\n${UI_BOLD}Шаг 2 из 4 · email для сертификата${UI_RESET}\n"
+	ui_info 'Let'\''s Encrypt пришлёт уведомления сюда, если что-то пойдёт не так.'
 
 	while [[ -z "$email" ]]; do
-		email="$(ui_ask 'Email для Let'\''s Encrypt' '')"
+		email="$(ui_ask 'Email' '')"
+		email="${email//$'\r'/}"
 		if ! validate_email "$email"; then
-			ui_warn 'похоже на кривой email'
+			ui_warn 'нужен нормальный email, например admin@kurduk.store'
 			email=""
 		fi
 	done
+	ui_ok "email: $email"
 
 	if [[ -z "$site" ]]; then
 		site="$(ui_pick_site "$INSTALL_DIR" "")"
 	fi
+	ui_ok "site: $site"
 
+	ui_out "\n${UI_BOLD}Шаг 4 из 4 · ключ${UI_RESET}\n"
 	if [[ -z "$secret" ]]; then
 		if ui_ask_yes 'Сгенерировать ключ автоматически?' 'y'; then
 			secret=""
 		else
 			while true; do
-				secret="$(ui_ask 'Ключ (32 hex, можно с префиксом dd)' '')"
+				secret="$(ui_ask 'Ключ (32 hex, dd в начале — по желанию)' '')"
+				secret="${secret,,}"
 				if [[ "$secret" =~ ^([0-9a-f]{32}|dd[0-9a-f]{32})$ ]]; then
 					break
 				fi
-				ui_warn 'нужно 32 hex-символа, dd в начале — опционально'
+				ui_warn 'нужно ровно 32 hex-символа'
 				secret=""
 			done
 		fi
 	fi
 
 	ui_line
-	ui_box 'Проверь перед стартом' \
+	ui_box 'Проверь и жми Enter для старта' \
 		"Hostname : $hostname" \
 		"Email    : $email" \
 		"Site     : $site" \
 		"Каталог  : $INSTALL_DIR"
 
-	if [[ "$assume_yes" -eq 0 ]] && ! ui_ask_yes 'Ставим?' 'y'; then
-		ui_warn 'отменено'
-		exit 0
+	if [[ "$assume_yes" -eq 0 ]]; then
+		if ! ui_ask_yes 'Начать установку?' 'y'; then
+			ui_warn 'отменено'
+			exit 0
+		fi
 	fi
 }
 
@@ -242,8 +284,14 @@ else
 	fi
 fi
 
-if ! validate_hostname "$hostname" || ! validate_email "$email"; then
-	ui_fail 'hostname или email не прошли проверку'
+if normalized="$(validate_hostname "$hostname")"; then
+	hostname="$normalized"
+else
+	ui_fail "$normalized"
+	exit 2
+fi
+if ! validate_email "$email"; then
+	ui_fail 'email не прошёл проверку'
 	exit 2
 fi
 

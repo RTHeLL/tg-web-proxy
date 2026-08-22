@@ -6,6 +6,19 @@ ui_is_tty() {
 	[[ -t 1 ]] && [[ -t 0 ]]
 }
 
+# curl | bash и bash <(curl ...) не дают read-у доступ к клавиатуре — только /dev/tty
+ui_can_prompt() {
+	[[ -r /dev/tty && -w /dev/tty ]]
+}
+
+ui_out() {
+	if ui_can_prompt && ! ui_is_tty; then
+		printf '%b' "$1" >/dev/tty
+	else
+		printf '%b' "$1"
+	fi
+}
+
 if ui_is_tty; then
 	UI_RESET=$'\033[0m'
 	UI_BOLD=$'\033[1m'
@@ -22,47 +35,55 @@ else
 fi
 
 ui_banner() {
-	cat <<EOF
-${UI_CYAN}${UI_BOLD}
+	ui_out "${UI_CYAN}${UI_BOLD}
   ┌──────────────────────────────────────────────┐
   │           tg-web-proxy installer             │
   │     Telegram Desktop · WEB · Docker          │
   └──────────────────────────────────────────────┘
 ${UI_RESET}${UI_DIM}  github.com/RTHeLL/tg-web-proxy${UI_RESET}
-EOF
+"
+}
+
+ui_intro() {
+	ui_box 'Что будет дальше' \
+		'1. Спросим домен, email и какой сайт показывать снаружи' \
+		'2. Поставим docker (если нет), скачаем код, соберём контейнер' \
+		'3. В конце выдадим hostname и key для Telegram Desktop' \
+		'' \
+		'Нужно заранее: DNS A на этот сервер, порты 80/443 свободны'
 }
 
 ui_line() {
-	printf '%s\n' "${UI_DIM}────────────────────────────────────────────────${UI_RESET}"
+	ui_out "${UI_DIM}────────────────────────────────────────────────${UI_RESET}\n"
 }
 
 ui_step() {
-	printf '\n%s[%s/%s]%s %s\n' "$UI_BLUE" "$1" "$2" "$UI_RESET" "$3"
+	ui_out "\n${UI_BLUE}[${1}/${2}]${UI_RESET} ${3}\n"
 }
 
 ui_ok() {
-	printf '  %s✓%s %s\n' "$UI_GREEN" "$UI_RESET" "$1"
+	ui_out "  ${UI_GREEN}✓${UI_RESET} ${1}\n"
 }
 
 ui_warn() {
-	printf '  %s!%s %s\n' "$UI_YELLOW" "$UI_RESET" "$1"
+	ui_out "  ${UI_YELLOW}!${UI_RESET} ${1}\n"
 }
 
 ui_fail() {
-	printf '  %s✗%s %s\n' "$UI_RED" "$UI_RESET" "$1" >&2
+	ui_out "  ${UI_RED}✗${UI_RESET} ${1}\n" >&2
 }
 
 ui_info() {
-	printf '  %s·%s %s\n' "$UI_DIM" "$UI_RESET" "$1"
+	ui_out "  ${UI_DIM}·${UI_RESET} ${1}\n"
 }
 
 ui_box() {
 	title="$1"
 	shift
 	ui_line
-	printf '%s%s%s\n' "$UI_BOLD" "$title" "$UI_RESET"
+	ui_out "${UI_BOLD}${title}${UI_RESET}\n"
 	while [[ $# -gt 0 ]]; do
-		printf '  %s\n' "$1"
+		ui_out "  ${1}\n"
 		shift
 	done
 	ui_line
@@ -99,15 +120,25 @@ ui_spin_done() {
 	fi
 }
 
+ui_read_line() {
+	reply=""
+	if ui_can_prompt; then
+		IFS= read -r reply < /dev/tty || reply=""
+	else
+		IFS= read -r reply || reply=""
+	fi
+	printf '%s' "$reply"
+}
+
 ui_ask() {
 	prompt="$1"
 	default="${2:-}"
 	if [[ -n "$default" ]]; then
-		printf '%s%s%s [%s]: ' "$UI_BOLD" "$prompt" "$UI_RESET" "$default"
+		ui_out "${UI_BOLD}${prompt}${UI_RESET} [${default}]: "
 	else
-		printf '%s%s%s: ' "$UI_BOLD" "$prompt" "$UI_RESET"
+		ui_out "${UI_BOLD}${prompt}${UI_RESET}: "
 	fi
-	IFS= read -r reply || reply=""
+	reply="$(ui_read_line)"
 	if [[ -z "$reply" && -n "$default" ]]; then
 		reply="$default"
 	fi
@@ -122,8 +153,8 @@ ui_ask_yes() {
 	else
 		hint='y/N'
 	fi
-	printf '%s%s%s (%s): ' "$UI_BOLD" "$prompt" "$UI_RESET" "$hint"
-	IFS= read -r reply || reply=""
+	ui_out "${UI_BOLD}${prompt}${UI_RESET} (${hint}): "
+	reply="$(ui_read_line)"
 	reply="$(printf '%s' "$reply" | tr '[:upper:]' '[:lower:]')"
 	if [[ -z "$reply" ]]; then
 		reply="$default"
@@ -152,8 +183,8 @@ ui_pick_site() {
 	)
 
 	ui_line
-	printf '%sВыбор сайта-камуфляжа%s\n' "$UI_BOLD" "$UI_RESET"
-	ui_info 'Снаружи будет обычный статический сайт. Тексты потом можно переписать.'
+	printf '%sШаг 3 из 4 · сайт-камуфляж%s\n' "$UI_BOLD" "$UI_RESET"
+	ui_info 'Снаружи должен открываться обычный сайт. Потом тексты можно переписать.'
 	printf '\n'
 
 	i=1
