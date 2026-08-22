@@ -30,6 +30,18 @@ tg-web-proxy install
 EOF
 }
 
+resolve_site_id() {
+	case "$1" in
+		1|northwind-field) printf '%s' 'northwind-field' ;;
+		2|studio-garden) printf '%s' 'studio-garden' ;;
+		3|atlas-books) printf '%s' 'atlas-books' ;;
+		4|harbor-dental) printf '%s' 'harbor-dental' ;;
+		5|craft-roastery) printf '%s' 'craft-roastery' ;;
+		6|pixel-repair) printf '%s' 'pixel-repair' ;;
+		*) return 1 ;;
+	esac
+}
+
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 		--hostname) hostname="${2:-}"; shift 2 ;;
@@ -42,6 +54,12 @@ while [[ $# -gt 0 ]]; do
 		*) echo "неизвестный аргумент: $1" >&2; usage; exit 2 ;;
 	esac
 done
+
+if [[ -n "$site" ]]; then
+	if resolved="$(resolve_site_id "$site")"; then
+		site="$resolved"
+	fi
+fi
 
 UI_SH=""
 if [[ -f "$(dirname "${BASH_SOURCE[0]}")/scripts/ui.sh" ]]; then

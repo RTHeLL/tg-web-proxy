@@ -130,6 +130,14 @@ print_summary() {
 	ui_credentials_box "$hostname" "$secret" "$site" "$root"
 }
 
+install_system_cli() {
+	if [[ "$(id -u)" -ne 0 ]]; then
+		return 0
+	fi
+	bash "$root/scripts/tgwebpr" _install_cli "$root"
+	ui_ok 'команда tgwebpr → /usr/local/bin/tgwebpr'
+}
+
 if [[ "$mode" == "local" ]]; then
 	if [[ "$quiet" -eq 0 ]]; then
 		ui_info "сайт: $site → runtime/site/"
@@ -141,6 +149,7 @@ if [[ "$mode" == "local" ]]; then
 	fi
 	check_docker
 	deploy_compose "$root"
+	install_system_cli
 	print_summary
 	exit 0
 fi

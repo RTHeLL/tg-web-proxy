@@ -45,12 +45,8 @@ ${UI_RESET}${UI_DIM}  github.com/RTHeLL/tg-web-proxy${UI_RESET}
 }
 
 ui_intro() {
-	ui_box 'Что будет дальше' \
-		'1. Спросим домен, email и какой сайт показывать снаружи' \
-		'2. Поставим docker (если нет), скачаем код, соберём контейнер' \
-		'3. В конце выдадим hostname и key для Telegram Desktop' \
-		'' \
-		'Нужно заранее: DNS A на этот сервер, порты 80/443 свободны'
+	ui_info 'Перед установкой: DNS A-запись домена → IP этого сервера.'
+	ui_info 'Порты 80 и 443 должны быть свободны (nginx/caddy на хосте — выключить).'
 }
 
 ui_line() {
@@ -183,27 +179,22 @@ ui_pick_site() {
 	)
 
 	ui_line
-	printf '%sШаг 3 из 4 · сайт-камуфляж%s\n' "$UI_BOLD" "$UI_RESET"
-	ui_info 'Снаружи должен открываться обычный сайт. Потом тексты можно переписать.'
-	printf '\n'
+	ui_out "${UI_BOLD}Шаг 3 из 4 · сайт на вашем домене${UI_RESET}\n"
+	ui_info 'По адресу https://ваш-домен/ откроется обычная страница (книжный, кофейня и т.п.).'
+	ui_info 'Это только обложка. Прокси работает независимо от текста на сайте.'
+	ui_info 'Enter = пункт 2'
+	ui_out '\n'
 
 	i=1
 	for label in "${site_labels[@]}"; do
 		id="${site_ids[$((i - 1))]}"
-		if [[ -n "$root" && -f "$root/web/sites/$id/index.html" ]]; then
-			mark=' '
-		elif [[ -n "$root" && -d "$root/web/sites" ]]; then
-			mark='?'
-		else
-			mark=' '
-		fi
-		printf '  %s%2d)%s  %s  %s(%s)%s\n' "$UI_CYAN" "$i" "$UI_RESET" "$label" "$UI_DIM" "$id" "$UI_RESET"
+		ui_out "  ${UI_CYAN}${i})${UI_RESET}  ${label}\n"
 		i=$((i + 1))
 	done
 
-	printf '\n'
+	ui_out '\n'
 	while true; do
-		choice="$(ui_ask 'Номер или id' '2')"
+		choice="$(ui_ask 'Номер пункта' '2')"
 		if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#site_ids[@]} )); then
 			printf '%s' "${site_ids[$((choice - 1))]}"
 			return 0
@@ -214,7 +205,7 @@ ui_pick_site() {
 				return 0
 			fi
 		done
-		ui_warn 'выбери номер из списка или id папки'
+		ui_warn 'введи номер из списка (1–6)'
 	done
 }
 
@@ -224,14 +215,15 @@ ui_credentials_box() {
 	site="$3"
 	install_dir="${4:-/opt/tg-web-proxy}"
 
-	ui_box 'Готово — данные для Telegram Desktop' \
+	ui_box 'Готово' \
 		"Hostname : $hostname" \
 		"Key      : $secret" \
 		"Site     : $site" \
 		"" \
-		"Desktop → Настройки → Тип соединения → WEB" \
+		"Telegram Desktop → WEB → hostname + key" \
 		"tg://webproxy?server=${hostname}&secret=${secret}" \
 		"" \
-		"Проверка: curl -fsS https://${hostname}/" \
-		"Логи:     cd ${install_dir} && docker compose logs -f tproxy"
+		"Дальше: tgwebpr          — меню управления" \
+		"        tgwebpr creds    — снова показать key" \
+		"        tgwebpr status   — проверить состояние"
 }

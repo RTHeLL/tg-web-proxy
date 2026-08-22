@@ -1,0 +1,210 @@
+#!/usr/bin/env bash
+# tgwebpr — управление установленным tg-web-proxy
+set -euo pipefail
+
+CONF="/etc/default/tgwebpr"
+INSTALL_DIR="/opt/tg-web-proxy"
+
+if [[ -f "$CONF" ]]; then
+	# shellcheck disable=SC1090
+	source "$CONF"
+fi
+
+if [[ -f "$INSTALL_DIR/scripts/ui.sh" ]]; then
+	# shellcheck source=scripts/ui.sh
+	source "$INSTALL_DIR/scripts/ui.sh"
+else
+	ui_ok() { printf '%s\n' "$1"; }
+	ui_warn() { printf '%s\n' "$1" >&2; }
+	ui_fail() { printf '%s\n' "$1" >&2; }
+	ui_info() { printf '%s\n' "$1"; }
+	ui_box() { shift; while [[ $# -gt 0 ]]; do echo "$1"; shift; done; }
+	ui_line() { echo '---'; }
+	ui_ask() {
+		local p="$1" d="${2:-}"
+		if [[ -r /dev/tty ]]; then
+			[[ -n "$d" ]] && printf '%s [%s]: ' "$p" "$d" > /dev/tty || printf '%s: ' "$p" > /dev/tty
+			IFS= read -r r < /dev/tty || r=""
+		else
+			[[ -n "$d" ]] && printf '%s [%s]: ' "$p" "$d" || printf '%s: ' "$p"
+			IFS= read -r r || r=""
+		fi
+		[[ -z "$r" && -n "$d" ]] && r="$d"
+		printf '%s' "$r"
+	}
+	ui_ask_yes() { local p="$1"; printf '%s [y/N]: ' "$p"; read -r r; [[ "$r" == y || "$r" == Y || "$r" == да ]]; }
+fi
+
+require_installed() {
+	if [[ ! -f "$INSTALL_DIR/docker-compose.yml" || ! -f "$INSTALL_DIR/.env" ]]; then
+		ui_fail "не найдена установка в $INSTALL_DIR"
+		exit 1
+	fi
+}
+
+require_root() {
+	if [[ "$(id -u)" -ne 0 ]]; then
+		ui_fail 'нужен root: sudo tgwebpr …'
+		exit 1
+	fi
+}
+
+load_env() {
+	require_installed
+	# shellcheck disable=SC1091
+	source "$INSTALL_DIR/.env"
+}
+
+compose() {
+	require_root
+	cd "$INSTALL_DIR"
+	docker compose --env-file .env "$@"
+}
+
+cmd_status() {
+	load_env
+	require_root
+	cd "$INSTALL_DIR"
+
+	ready='нет'
+	if compose exec -T tproxy curl --fail --silent http://127.0.0.1:8081/readyz >/dev/null 2>&1; then
+		ready='да'
+	fi
+
+	https='нет'
+	if curl --fail --silent --max-time 10 "https://${TPROXY_HOSTNAME}/" >/dev/null 2>&1; then
+		https='да'
+	fi
+
+	ui_box 'Статус tg-web-proxy' \
+		"Hostname : ${TPROXY_HOSTNAME}" \
+		"Site     : ${SITE_VARIANT:-?}" \
+		"Каталог  : ${INSTALL_DIR}" \
+		"Ready    : ${ready}" \
+		"HTTPS    : ${https}"
+
+	echo
+	compose ps
+}
+
+cmd_creds() {
+	load_env
+	ui_box 'Telegram Desktop · WEB proxy' \
+		"Hostname : ${TPROXY_HOSTNAME}" \
+		"Key      : ${TPROXY_SECRET}" \
+		"" \
+		"tg://webproxy?server=${TPROXY_HOSTNAME}&secret=${TPROXY_SECRET}"
+}
+
+cmd_logs() {
+	lines="${1:-50}"
+	require_root
+	compose logs --tail="$lines" -f tproxy
+}
+
+cmd_restart() {
+	require_root
+	compose restart tproxy
+	ui_ok 'контейнер перезапущен'
+	cmd_status
+}
+
+cmd_update() {
+	require_root
+	require_installed
+	cd "$INSTALL_DIR"
+	if [[ -d .git ]]; then
+		git fetch origin main -q
+		git pull --ff-only origin main -q
+	fi
+	compose build
+	compose up -d
+	ui_ok 'обновлено'
+	cmd_status
+}
+
+cmd_uninstall() {
+	require_root
+	require_installed
+	ui_warn "удаляю tg-web-proxy из ${INSTALL_DIR}"
+	if ! ui_ask_yes 'Точно удалить?' 'n'; then
+		ui_info 'отменено'
+		exit 0
+	fi
+	cd "$INSTALL_DIR"
+	compose down -v 2>/dev/null || compose down 2>/dev/null || true
+	rm -f /usr/local/bin/tgwebpr
+	rm -f "$CONF"
+	if ui_ask_yes "Удалить каталог ${INSTALL_DIR}? (git и .env пропадут)" 'n'; then
+		rm -rf "$INSTALL_DIR"
+		ui_ok 'каталог удалён'
+	else
+		ui_info "каталог оставлен: ${INSTALL_DIR}"
+	fi
+	ui_ok 'tgwebpr снят с системы'
+}
+
+cmd_menu() {
+	while true; do
+		ui_line
+		ui_out "${UI_BOLD}tgwebpr — управление WEB proxy${UI_RESET}\n"
+		ui_info 's — статус'
+		ui_info 'c — hostname и key для Telegram'
+		ui_info 'l — логи (Ctrl+C выход)'
+		ui_info 'r — перезапуск контейнера'
+		ui_info 'u — обновить из git и пересобрать'
+		ui_info 'x — удалить'
+		ui_info 'q — выход'
+		ui_line
+		choice="$(ui_ask 'Команда' 's')"
+		choice="$(printf '%s' "$choice" | tr '[:upper:]' '[:lower:]')"
+		case "$choice" in
+			s|status|1) cmd_status ;;
+			c|creds|2) cmd_creds ;;
+			l|logs|3) cmd_logs 80 ;;
+			r|restart|4) cmd_restart ;;
+			u|update|5) cmd_update ;;
+			x|uninstall|6) cmd_uninstall; break ;;
+			q|quit|exit|0) break ;;
+			*) ui_warn 'не понял — s c l r u x q' ;;
+		esac
+	done
+}
+
+usage() {
+	cat <<EOF
+tgwebpr — управление tg-web-proxy
+
+  tgwebpr              меню
+  tgwebpr status       состояние
+  tgwebpr creds        hostname + key
+  tgwebpr logs [N]     логи (по умолчанию 50 строк, -f)
+  tgwebpr restart      перезапуск
+  tgwebpr update       git pull + rebuild
+  tgwebpr uninstall    снять с сервера
+EOF
+}
+
+install_cli() {
+	local root="$1"
+	require_root
+	install -m 0755 "$root/scripts/tgwebpr" /usr/local/bin/tgwebpr
+	cat >"$CONF" <<EOF
+# tg-web-proxy
+INSTALL_DIR=$root
+EOF
+	chmod 0644 "$CONF"
+}
+
+case "${1:-menu}" in
+	menu|'') cmd_menu ;;
+	status|st) cmd_status ;;
+	creds|cred|show) cmd_creds ;;
+	logs|log) cmd_logs "${2:-50}" ;;
+	restart) cmd_restart ;;
+	update) cmd_update ;;
+	uninstall|remove) cmd_uninstall ;;
+	_install_cli) install_cli "${2:?}" ;;
+	-h|--help|help) usage ;;
+	*) ui_fail "неизвестная команда: $1"; usage; exit 2 ;;
+esac
