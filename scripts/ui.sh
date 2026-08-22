@@ -159,6 +159,26 @@ ui_ask_yes() {
 	[[ "$reply" == "y" || "$reply" == "yes" || "$reply" == "д" || "$reply" == "да" ]]
 }
 
+ui_ensure_site_catalog() {
+	local root="${1:-}"
+	SITE_IDS=()
+	SITE_LABELS=()
+	local ui_dir catalog_sh=""
+	ui_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+	if [[ -f "$ui_dir/sites.sh" ]]; then
+		catalog_sh="$ui_dir/sites.sh"
+	elif [[ -n "$root" && -f "$root/scripts/sites.sh" ]]; then
+		catalog_sh="$root/scripts/sites.sh"
+	fi
+	if [[ -n "$catalog_sh" ]]; then
+		# shellcheck source=scripts/sites.sh
+		source "$catalog_sh"
+	fi
+	if declare -f load_site_catalog >/dev/null 2>&1; then
+		load_site_catalog "$root"
+	fi
+}
+
 ui_pick_site() {
 	root="$1"
 	selected="${2:-}"
@@ -168,18 +188,10 @@ ui_pick_site() {
 		return 0
 	fi
 
-	local ui_dir
-	ui_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-	if [[ -f "$ui_dir/sites.sh" ]]; then
-		# shellcheck source=scripts/sites.sh
-		source "$ui_dir/sites.sh"
-	fi
-
-	# порядок из web/sites/* — меню подхватывает все шаблоны
-	load_site_catalog "$root"
+	ui_ensure_site_catalog "$root"
 	if [[ ${#SITE_IDS[@]} -eq 0 ]]; then
-		ui_warn 'нет шаблонов в web/sites/'
-		printf '%s' "${2:-speedtest}"
+		ui_warn 'нет шаблонов в web/sites/ — будет speedtest'
+		printf '%s' 'speedtest'
 		return 0
 	fi
 

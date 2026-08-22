@@ -116,6 +116,7 @@ sudo bash deploy/install.sh \
 
 | Что | Что делать |
 |---|---|
+| При установке `load_site_catalog: command not found` / `SITE_IDS: unbound variable` | обновите установщик (`git pull` в репо) или укажите сайт флагом: `--site speedtest`; шаблон выбирается **после** `git clone` |
 | Permission denied на `./scripts` | `bash script.sh` или one-liner выше |
 | 80/443 заняты | убрать nginx/caddy на хосте |
 | Connecting в TG | `tgwebpr creds` — сверить hostname/key |

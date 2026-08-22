@@ -68,11 +68,11 @@ elif [[ -f "$INSTALL_DIR/scripts/ui.sh" ]]; then
 	UI_SH="$INSTALL_DIR/scripts/ui.sh"
 fi
 if [[ -z "$UI_SH" ]]; then
-	UI_TMP="$(mktemp /tmp/tg-web-proxy-ui.XXXXXX.sh)"
-	if curl -fsSL --proto '=https' --tlsv1.2 \
-		"https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/${REPO_REF}/scripts/ui.sh" \
-		-o "$UI_TMP" 2>/dev/null; then
-		UI_SH="$UI_TMP"
+	UI_TMP_DIR="$(mktemp -d /tmp/tg-web-proxy-ui.XXXXXX)"
+	base="https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/${REPO_REF}/scripts"
+	if curl -fsSL --proto '=https' --tlsv1.2 "$base/ui.sh" -o "$UI_TMP_DIR/ui.sh" 2>/dev/null; then
+		curl -fsSL --proto '=https' --tlsv1.2 "$base/sites.sh" -o "$UI_TMP_DIR/sites.sh" 2>/dev/null || true
+		UI_SH="$UI_TMP_DIR/ui.sh"
 	fi
 fi
 if [[ -n "$UI_SH" && -f "$UI_SH" ]]; then
@@ -161,12 +161,9 @@ interactive_setup() {
 	done
 	ui_ok "email: $email"
 
-	if [[ -z "$site" ]]; then
-		site="$(ui_pick_site "$INSTALL_DIR" "")"
-	fi
-	ui_ok "site: $site"
+	ui_info 'Шаблон сайта выберем после загрузки кода (шаг 3 из 5).'
 
-	ui_out "\n${UI_BOLD}Шаг 4 из 4 · ключ${UI_RESET}\n"
+	ui_out "\n${UI_BOLD}Шаг 3 из 4 · ключ${UI_RESET}\n"
 	if [[ -z "$secret" ]]; then
 		if ui_ask_yes 'Сгенерировать ключ автоматически?' 'y'; then
 			secret=""
@@ -187,7 +184,7 @@ interactive_setup() {
 	ui_box 'Проверь и жми Enter для старта' \
 		"Hostname : $hostname" \
 		"Email    : $email" \
-		"Site     : $site" \
+		"Site     : ${site:-выбор после git clone}" \
 		"Каталог  : $INSTALL_DIR"
 
 	if [[ "$assume_yes" -eq 0 ]]; then
@@ -274,7 +271,9 @@ ensure_repo() {
 	ui_spin_done
 	ui_ok "$INSTALL_DIR"
 	# shellcheck source=scripts/ui.sh
-	[[ -f "$INSTALL_DIR/scripts/ui.sh" ]] && source "$INSTALL_DIR/scripts/ui.sh"
+	if [[ -f "$INSTALL_DIR/scripts/ui.sh" ]]; then
+		source "$INSTALL_DIR/scripts/ui.sh"
+	fi
 }
 
 deploy_stack() {
@@ -335,7 +334,9 @@ ensure_docker
 ensure_repo
 
 if [[ -z "$site" ]]; then
-	site="$(ui_pick_site "$INSTALL_DIR" "studio-garden")"
+	ui_out "\n${UI_BOLD}Шаг 4 из 5 · сайт на вашем домене${UI_RESET}\n"
+	site="$(ui_pick_site "$INSTALL_DIR" "speedtest")"
+	ui_ok "site: $site"
 fi
 
 deploy_stack
