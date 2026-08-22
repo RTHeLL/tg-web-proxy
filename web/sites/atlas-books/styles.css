@@ -1,0 +1,203 @@
+:root {
+  --ink: #2c1f18;
+  --muted: #6b5347;
+  --paper: #f7f0e6;
+  --wine: #7a3b3b;
+  --gold: #c4a574;
+  --rule: #dccbb8;
+  --font-display: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  --font-body: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 3px,
+      rgba(196, 165, 116, 0.06) 3px,
+      rgba(196, 165, 116, 0.06) 4px
+    ),
+    linear-gradient(180deg, #faf4ea 0%, var(--paper) 100%);
+  color: var(--ink);
+  min-height: 100%;
+}
+
+body {
+  margin: 0 auto;
+  max-width: 54rem;
+  min-height: 100vh;
+  padding: 1.75rem 1.35rem 3rem;
+  font-family: var(--font-body);
+  line-height: 1.58;
+}
+
+a {
+  color: var(--wine);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  color: var(--ink);
+}
+
+.site-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0 1.25rem;
+  border-bottom: 3px double var(--rule);
+  margin-bottom: 2.25rem;
+}
+
+.mark {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+
+nav {
+  display: flex;
+  gap: 1.1rem;
+  font-size: 0.94rem;
+}
+
+.hero {
+  padding: 1rem 0 2rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.85rem;
+  font-size: 0.74rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+h1 {
+  margin: 0 0 1rem;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 2.85rem);
+  line-height: 1.14;
+}
+
+h2 {
+  font-family: var(--font-display);
+}
+
+.lede {
+  margin: 0;
+  max-width: 36rem;
+  font-size: 1.08rem;
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: #fffaf3;
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--wine);
+  padding: 1.15rem 1.2rem 1.3rem;
+}
+
+.card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+  color: var(--wine);
+}
+
+.card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.97rem;
+}
+
+.feature {
+  margin-top: 2.5rem;
+  padding: 1.5rem;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.feature h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  color: var(--gold);
+}
+
+.feature p {
+  margin: 0;
+  max-width: 34rem;
+  opacity: 0.92;
+}
+
+.narrow {
+  max-width: 38rem;
+}
+
+.narrow h1 {
+  font-size: clamp(1.85rem, 4vw, 2.35rem);
+}
+
+.narrow h2 {
+  margin-top: 2rem;
+  font-size: 1.2rem;
+  color: var(--wine);
+}
+
+.narrow ul {
+  color: var(--muted);
+  padding-left: 1.25rem;
+}
+
+.site-footer {
+  margin-top: 3.5rem;
+  padding-top: 1.25rem;
+  border-top: 3px double var(--rule);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.footer-title {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.footer-grid p {
+  margin: 0;
+}
+
+.footer-copy {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .site-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

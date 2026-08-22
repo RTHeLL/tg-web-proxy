@@ -1,0 +1,33 @@
+[Unit]
+Description=Official Telegram MTProxy backend
+After=network-online.target tproxy-firewall.service
+Wants=network-online.target
+Requires=tproxy-firewall.service
+
+[Service]
+Type=simple
+User=mtproxy
+Group=mtproxy
+EnvironmentFile=/etc/mtproxy/mtproxy.env
+Environment=MTPROXY_WORKERS=1
+Environment=MTPROXY_MAX_CONNECTIONS=4096
+WorkingDirectory=/opt/MTProxy
+ExecStart=/opt/MTProxy/objs/bin/mtproto-proxy -u mtproxy -p 8888 -H 2398 -S ${MTPROXY_SECRET} --aes-pwd /etc/mtproxy/proxy-secret /etc/mtproxy/proxy-multi.conf -M ${MTPROXY_WORKERS} -C ${MTPROXY_MAX_CONNECTIONS}
+Restart=on-failure
+RestartSec=3s
+LimitNOFILE=1048576
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectHome=true
+ProtectProc=invisible
+ProtectSystem=strict
+ProcSubset=pid
+ReadOnlyPaths=/etc/mtproxy
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

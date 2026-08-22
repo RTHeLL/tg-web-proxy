@@ -1,0 +1,9 @@
+.git
+runtime/
+.deploy/
+*.md
+!docker/
+assets/
+agent-tools/
+.env
+.env.*

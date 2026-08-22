@@ -1,0 +1,6 @@
+table inet tproxy_backend {
+	chain local_backend {
+		type filter hook input priority -10; policy accept;
+		iifname != "lo" tcp dport { 2398, 8888 } drop
+	}
+}

@@ -1,0 +1,14 @@
+[Unit]
+Description=Refresh official MTProxy routing configuration
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/refresh-mtproxy-config
+ProtectProc=invisible
+ProcSubset=pid
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/etc/mtproxy

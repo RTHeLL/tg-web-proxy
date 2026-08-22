@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Harbor Dental">
+  <rect width="64" height="64" rx="14" fill="#2b6cb0"/>
+  <path d="M32 48 C32 48 20 38 20 28 C20 22 26 18 32 24 C38 18 44 22 44 28 C44 38 32 48 32 48 Z" fill="#ffffff"/>
+  <circle cx="32" cy="28" r="4" fill="#e8f2fa"/>
+</svg>

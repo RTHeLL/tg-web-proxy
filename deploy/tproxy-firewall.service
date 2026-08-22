@@ -1,0 +1,23 @@
+[Unit]
+Description=Configure local proxy backend ports
+# nftables.service (Debian's default /etc/nftables.conf begins with
+# `flush ruleset`) would silently drop the inet tproxy_backend table on its
+# start/reload/restart while MTProxy keeps listening on 0.0.0.0. Ordering
+# after it and binding to it re-applies the table whenever nftables restarts.
+# A provider-level firewall in front of the host is still required; this unit
+# is the second boundary, not the only one.
+After=nftables.service
+PartOf=nftables.service
+Before=mtproxy.service tproxy-server.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStart=-/usr/sbin/nft delete table inet tproxy_backend
+ExecStart=/usr/sbin/nft -f /etc/tproxy-server/firewall.nft
+ExecReload=-/usr/sbin/nft delete table inet tproxy_backend
+ExecReload=/usr/sbin/nft -f /etc/tproxy-server/firewall.nft
+ExecStop=-/usr/sbin/nft delete table inet tproxy_backend
+
+[Install]
+WantedBy=multi-user.target

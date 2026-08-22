@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Studio Garden">
+  <rect width="64" height="64" rx="12" fill="#3d6b4f"/>
+  <path d="M32 48 C32 48 18 34 18 24 C18 18 24 14 32 22 C40 14 46 18 46 24 C46 34 32 48 32 48 Z" fill="#8fa88a"/>
+  <path d="M32 48 L32 56" stroke="#f6f4ef" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

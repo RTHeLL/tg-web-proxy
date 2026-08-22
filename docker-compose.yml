@@ -1,0 +1,24 @@
+services:
+  tproxy:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: tg-web-proxy
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./runtime/site:/srv/tproxy-site:ro
+      - caddy_data:/data/caddy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8081/readyz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+
+volumes:
+  caddy_data:

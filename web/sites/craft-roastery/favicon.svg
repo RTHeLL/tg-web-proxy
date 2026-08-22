@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Craft Roastery">
+  <rect width="64" height="64" rx="8" fill="#14110f"/>
+  <circle cx="32" cy="34" r="16" fill="none" stroke="#c87941" stroke-width="3"/>
+  <path d="M24 22 Q32 12 40 22" fill="none" stroke="#8b4a2b" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="32" cy="34" r="5" fill="#c87941"/>
+</svg>
