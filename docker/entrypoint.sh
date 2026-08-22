@@ -21,6 +21,10 @@ require_env TPROXY_SECRET
 : "${CARRIER_MODE:=websocket}"
 : "${BACKEND:=telemt}"
 : "${TELEMT_MIDDLE_PROXY:=false}"
+# sponsored channel (ad tag) in telemt requires middle-end proxy path
+if [ -n "${MTPROXY_AD_TAG:-}" ] && [ "$BACKEND" = "telemt" ]; then
+	TELEMT_MIDDLE_PROXY=true
+fi
 export CARRIER_MODE BACKEND TELEMT_MIDDLE_PROXY
 
 mkdir -p /etc/mtproxy /etc/tproxy-server /etc/caddy /etc/telemt /srv/tproxy-site

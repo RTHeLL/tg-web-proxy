@@ -56,11 +56,28 @@ sudo tgwebpr restart
 
 ```bash
 tgwebpr proxy          # пункт 4 — ad tag
-# или в .env:
-# MTPROXY_AD_TAG=00112233445566778899aabbccddeeff
 ```
 
-Там же:
+**Важно — WEB proxy ≠ обычный MTProxy:**
+
+| | Обычный `tg://proxy` | WEB `tg://webproxy` |
+|---|---|---|
+| Регистрация в боте | IP:443 + secret | **домен:443** + **WEB secret** (`tgwebpr creds`) |
+| Ссылка для юзеров | `tg://proxy?...` | `tg://webproxy?...` — **не** ссылка из бота |
+| ME pool (telemt) | — | **нужен `true`**, если задан ad tag |
+
+**Почему канал не виден:**
+
+1. В боте зарегистрирован старый MTProxy, а клиенты сидят на **WEB** — добавьте прокси заново: `tweb.kurduk.store:443` и secret из `tgwebpr creds`.
+2. В боте: `/myproxies` → ваш сервер → **Set promotion** → публичная ссылка на канал (не private).
+3. **`TELEMT_MIDDLE_PROXY=true`** — включается автоматически при `MTPROXY_AD_TAG`; без ME pool ad tag в telemt не работает.
+4. Если вы **уже подписаны** на promo-канал — Telegram его не показывает (проверьте с другого аккаунта).
+5. Обновление на серверах Telegram — до **~1 часа**.
+6. Desktop WEB — sponsored channel привязан к backend tag; если после пунктов 1–4 не появился, проверьте `docker exec tg-web-proxy cat /etc/telemt/telemt.toml | grep ad_tag`.
+
+После смены ad tag: `tgwebpr restart`, переподключите WEB proxy в Telegram.
+
+Там же в `tgwebpr proxy`:
 - **backend** — `telemt` (рекомендуется) или `mtproxy` (official)
 - **carrier** — `websocket` для Desktop
 - **ME pool** — middle-end proxy в telemt (`true`/`false`, по умолчанию `false`)

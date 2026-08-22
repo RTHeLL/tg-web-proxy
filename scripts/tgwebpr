@@ -462,8 +462,9 @@ set_ad_tag() {
 		return 1
 	fi
 	set_env_var MTPROXY_AD_TAG "$tag"
+	set_env_var TELEMT_MIDDLE_PROXY true
 	compose up -d
-	ui_ok 'ad tag сохранён'
+	ui_ok 'ad tag сохранён (ME pool включён — нужен для promo в telemt)'
 }
 
 cmd_proxy() {
