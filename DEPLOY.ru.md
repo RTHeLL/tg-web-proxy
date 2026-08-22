@@ -75,7 +75,21 @@ tgwebpr proxy          # пункт 4 — ad tag
 5. Обновление на серверах Telegram — до **~1 часа**.
 6. Desktop WEB — sponsored channel привязан к backend tag; если после пунктов 1–4 не появился, проверьте `docker exec tg-web-proxy cat /etc/telemt/telemt.toml | grep ad_tag`.
 
-После смены ad tag: `tgwebpr restart`, переподключите WEB proxy в Telegram.
+После смены ad tag: `tgwebpr proxy` (пункт 4) — контейнер пересоздаётся.  
+Если перед этим делали `git pull` — **`tgwebpr update`** (пересборка образа с `--build`), иначе старый `entrypoint.sh` не подставит `ad_tag` в telemt.
+
+```bash
+tgwebpr update       # git pull + docker compose up -d --build --force-recreate
+tgwebpr proxy        # пункт 4 — ad tag
+```
+
+Проверка:
+
+```bash
+docker exec tg-web-proxy grep -E 'ad_tag|use_middle_proxy' /etc/telemt/telemt.toml
+```
+
+Переподключите WEB proxy в Telegram.
 
 Там же в `tgwebpr proxy`:
 - **backend** — `telemt` (рекомендуется) или `mtproxy` (official)

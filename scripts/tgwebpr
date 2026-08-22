@@ -261,7 +261,7 @@ cmd_status() {
 		if [[ "$ad_env" == "—" ]]; then
 			ui_warn 'ad tag не задан в .env — promo не работает (tgwebpr proxy → пункт 4)'
 		elif [[ "$ad_telemt" == "—" || "$ad_env" != "$ad_telemt" ]]; then
-			ui_warn 'ad tag в .env не попал в telemt — tgwebpr restart или tgwebpr proxy → 4'
+			ui_warn 'ad tag в .env не попал в telemt — tgwebpr update (нужен --build после git pull)'
 		elif [[ "$me_telemt" != "true" ]]; then
 			ui_warn 'ME pool выключен — для promo нужен use_middle_proxy=true'
 		fi
@@ -338,8 +338,7 @@ cmd_update() {
 	ensure_backend_env telemt
 
 	ui_out "  ${UI_DIM}docker compose build…${UI_RESET}\n"
-	compose build
-	compose up -d
+	compose up -d --build --force-recreate
 	ui_ok 'контейнер пересобран'
 	cmd_status
 }
