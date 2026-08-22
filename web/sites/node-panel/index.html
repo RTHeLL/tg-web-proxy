@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Node Panel — Cloud VPS Hosting</title>
+  <meta name="description" content="NVMe VPS instances with a clean control panel, hourly billing, and private networking across three regions.">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="site-header">
+    <a class="mark" href="/">
+      <span class="mark-led" aria-hidden="true"></span>
+      Node Panel
+    </a>
+    <nav>
+      <a href="/about">About</a>
+      <a href="/privacy">Privacy</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">VPS hosting · NVMe · Hourly billing</p>
+        <h1>Spin up servers in seconds. Pay only for the hours you use.</h1>
+        <p class="lede">
+          Node Panel gives developers a no-nonsense control surface for
+          virtual machines, floating IPs, and private VLANs. Deploy from
+          stock images or upload your own cloud-init template.
+        </p>
+        <div class="hero-tags">
+          <span class="tag">AMD EPYC</span>
+          <span class="tag">10 Gbps NIC</span>
+          <span class="tag">API + CLI</span>
+        </div>
+      </div>
+
+      <aside class="panel-mock" aria-label="Control panel preview">
+        <div class="panel-top">
+          <span>node-fra-042</span>
+          <span class="panel-status">● running</span>
+        </div>
+        <div class="panel-body">
+          <div class="server-row">
+            <div class="server-icon">VM</div>
+            <div>
+              <p class="server-name">api-staging-01</p>
+              <p class="server-meta">2 vCPU · 4 GB · fra1</p>
+            </div>
+            <span class="server-pill">healthy</span>
+          </div>
+          <div class="server-row">
+            <div class="server-icon">VM</div>
+            <div>
+              <p class="server-name">worker-batch-03</p>
+              <p class="server-meta">4 vCPU · 8 GB · ams1</p>
+            </div>
+            <span class="server-pill">healthy</span>
+          </div>
+          <div class="server-row">
+            <div class="server-icon">VM</div>
+            <div>
+              <p class="server-name">db-replica-02</p>
+              <p class="server-meta">2 vCPU · 16 GB · lon1</p>
+            </div>
+            <span class="server-pill warn">syncing</span>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="spec-bar" aria-label="Infrastructure specs">
+      <article class="spec-item">
+        <p class="spec-value">3</p>
+        <p class="spec-label">EU regions online</p>
+      </article>
+      <article class="spec-item">
+        <p class="spec-value">99.95%</p>
+        <p class="spec-label">Uptime SLA</p>
+      </article>
+      <article class="spec-item">
+        <p class="spec-value">&lt;60s</p>
+        <p class="spec-label">Median boot time</p>
+      </article>
+      <article class="spec-item">
+        <p class="spec-value">24/7</p>
+        <p class="spec-label">NOC monitoring</p>
+      </article>
+    </section>
+
+    <div class="section-head">
+      <h2>Instance plans</h2>
+      <p>All tiers include DDoS scrubbing, reverse DNS, and snapshot backups.</p>
+    </div>
+
+    <section class="plan-grid">
+      <article class="plan-card">
+        <p class="plan-tier">Starter</p>
+        <p class="plan-price">€4<span>/mo</span></p>
+        <p class="plan-desc">Side projects and staging environments.</p>
+        <ul class="plan-features">
+          <li>1 vCPU · 1 GB RAM</li>
+          <li>25 GB NVMe</li>
+          <li>1 TB transfer</li>
+          <li>1 IPv4 included</li>
+        </ul>
+      </article>
+      <article class="plan-card featured">
+        <p class="plan-tier">Growth</p>
+        <p class="plan-price">€14<span>/mo</span></p>
+        <p class="plan-desc">Production APIs and small databases.</p>
+        <ul class="plan-features">
+          <li>2 vCPU · 4 GB RAM</li>
+          <li>80 GB NVMe</li>
+          <li>3 TB transfer</li>
+          <li>Private networking</li>
+        </ul>
+      </article>
+      <article class="plan-card">
+        <p class="plan-tier">Compute</p>
+        <p class="plan-price">€48<span>/mo</span></p>
+        <p class="plan-desc">Batch workers and CI runners.</p>
+        <ul class="plan-features">
+          <li>8 vCPU · 16 GB RAM</li>
+          <li>320 GB NVMe</li>
+          <li>8 TB transfer</li>
+          <li>Dedicated CPU threads</li>
+        </ul>
+      </article>
+    </section>
+
+    <div class="section-head">
+      <h2>Panel features</h2>
+      <p>Everything accessible from the browser or our REST API.</p>
+    </div>
+
+    <section class="feature-grid">
+      <article class="feature-card">
+        <span class="feature-num">01</span>
+        <div>
+          <h3>One-click images</h3>
+          <p>
+            Ubuntu, Debian, Rocky, and Fedora with cloud-init preconfigured.
+            Custom ISO upload for bare-metal-style installs.
+          </p>
+        </div>
+      </article>
+      <article class="feature-card">
+        <span class="feature-num">02</span>
+        <div>
+          <h3>Firewall groups</h3>
+          <p>
+            Stateful rules attached to tags. Open port 443 on web nodes
+            without touching database instances.
+          </p>
+        </div>
+      </article>
+      <article class="feature-card">
+        <span class="feature-num">03</span>
+        <div>
+          <h3>Hourly metering</h3>
+          <p>
+            Destroy a test VM Friday night — billing stops at the destroy
+            timestamp. Monthly caps prevent surprise invoices.
+          </p>
+        </div>
+      </article>
+      <article class="feature-card">
+        <span class="feature-num">04</span>
+        <div>
+          <h3>Object storage</h3>
+          <p>
+            S3-compatible buckets in the same region as your compute.
+            Lifecycle policies move cold backups to archive tier.
+          </p>
+        </div>
+      </article>
+    </section>
+
+    <section class="cta-band">
+      <h2>Need a custom cluster quote?</h2>
+      <p>
+        Dedicated hosts, GPU instances, and colocation handoffs are available
+        through our sales desk. See the <a href="/about">infrastructure overview</a>
+        for peering and compliance details.
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-grid">
+      <div>
+        <p class="footer-title">Node Panel GmbH</p>
+        <p>Landsberger Str. 88<br>80339 Munich, Germany</p>
+      </div>
+      <div>
+        <p class="footer-title">Network operations</p>
+        <p>Mon–Sun 24h NOC<br>Status page updated every 60 seconds</p>
+      </div>
+    </div>
+    <p class="footer-copy">&copy; 2026 Node Panel GmbH</p>
+  </footer>
+</body>
+</html>

@@ -57,15 +57,13 @@ if [[ -r /dev/tty && -w /dev/tty ]]; then
 	UI_RED=$'\033[31m' UI_BLUE=$'\033[34m'
 fi
 
-SITE_IDS=(northwind-field studio-garden atlas-books harbor-dental craft-roastery pixel-repair)
-SITE_LABELS=(
-	'Northwind Field Notes — полевые заметки'
-	'Studio Garden — ландшафт'
-	'Atlas Books — книжный'
-	'Harbor Dental — стоматология'
-	'Craft Roastery — кофе'
-	'Pixel Repair — ремонт техники'
-)
+SITE_IDS=()
+SITE_LABELS=()
+if [[ -f "$INSTALL_DIR/scripts/sites.sh" ]]; then
+	# shellcheck source=scripts/sites.sh
+	source "$INSTALL_DIR/scripts/sites.sh"
+	load_site_catalog "$INSTALL_DIR"
+fi
 
 CARRIER_MODES=(https https-lanes websocket websocket-lanes)
 CARRIER_LABELS=(
@@ -353,20 +351,26 @@ apply_site() {
 cmd_site() {
 	require_root
 	load_env
+	load_site_catalog "$INSTALL_DIR"
+	if [[ ${#SITE_IDS[@]} -eq 0 ]]; then
+		ui_fail 'нет шаблонов в web/sites/'
+		pause_menu
+		return 1
+	fi
 	ui_out "\n${UI_BOLD}Шаблон сайта на ${TPROXY_HOSTNAME}${UI_RESET}\n"
 	ui_info "сейчас: ${SITE_VARIANT:-?}"
 	ui_info 'Enter = отмена'
 	ui_out '\n'
 	local i=1
 	for label in "${SITE_LABELS[@]}"; do
-		ui_out "  ${UI_CYAN}${i})${UI_RESET}  ${label}\n"
+		ui_out "  ${UI_CYAN}${i})${UI_RESET}  ${SITE_IDS[$((i - 1))]} — ${label}\n"
 		i=$((i + 1))
 	done
 	ui_out '\n'
-	local choice site
-	choice="$(ui_ask 'Номер' '')"
+	local choice site max="${#SITE_IDS[@]}"
+	choice="$(ui_ask 'Номер или id' '')"
 	[[ -z "$choice" ]] && { ui_info 'отменено'; pause_menu; return 0; }
-	if [[ "$choice" =~ ^[1-6]$ ]]; then
+	if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= max )); then
 		site="${SITE_IDS[$((choice - 1))]}"
 	else
 		site="$choice"
@@ -402,6 +406,105 @@ cmd_carrier() {
 	fi
 	set_carrier_mode "$mode"
 	pause_menu
+}
+
+set_env_var() {
+	local key="$1"
+	local val="$2"
+	if grep -q "^${key}=" "$INSTALL_DIR/.env" 2>/dev/null; then
+		sed -i "s/^${key}=.*/${key}=${val}/" "$INSTALL_DIR/.env"
+	else
+		printf '%s=%s\n' "$key" "$val" >>"$INSTALL_DIR/.env"
+	fi
+	chmod 0600 "$INSTALL_DIR/.env"
+}
+
+clear_env_var() {
+	local key="$1"
+	if grep -q "^${key}=" "$INSTALL_DIR/.env" 2>/dev/null; then
+		sed -i "/^${key}=/d" "$INSTALL_DIR/.env"
+		chmod 0600 "$INSTALL_DIR/.env"
+	fi
+}
+
+set_backend_engine() {
+	local engine="$1"
+	case "$engine" in
+		telemt|mtproxy) ;;
+		*) ui_fail "backend: telemt или mtproxy"; return 1 ;;
+	esac
+	set_env_var BACKEND "$engine"
+	compose up -d
+	ui_ok "backend: $engine"
+}
+
+set_middle_proxy() {
+	local val="$1"
+	case "$val" in
+		true|false) ;;
+		*) ui_fail "нужно true или false"; return 1 ;;
+	esac
+	set_env_var TELEMT_MIDDLE_PROXY "$val"
+	compose up -d
+	ui_ok "TELEMT_MIDDLE_PROXY=$val"
+}
+
+set_ad_tag() {
+	local tag="${1,,}"
+	if [[ -z "$tag" ]]; then
+		clear_env_var MTPROXY_AD_TAG
+		compose up -d
+		ui_ok 'ad tag удалён'
+		return 0
+	fi
+	if [[ ! "$tag" =~ ^[0-9a-f]{32}$ ]]; then
+		ui_fail 'ad tag: ровно 32 hex-символа из @MTProxybot'
+		return 1
+	fi
+	set_env_var MTPROXY_AD_TAG "$tag"
+	compose up -d
+	ui_ok 'ad tag сохранён'
+}
+
+cmd_proxy() {
+	require_root
+	load_env
+	ensure_carrier_env websocket
+	ensure_backend_env telemt
+	# shellcheck disable=SC1091
+	set -a; source "$INSTALL_DIR/.env" 2>/dev/null || true; set +a
+	while true; do
+		ui_out "\n${UI_BOLD}MTProxy / telemt${UI_RESET}\n"
+		ui_info "backend : ${BACKEND:-telemt}"
+		ui_info "carrier : ${CARRIER_MODE:-websocket}"
+		ui_info "ad tag  : ${MTPROXY_AD_TAG:-—}"
+		ui_info "ME pool : ${TELEMT_MIDDLE_PROXY:-false}"
+		ui_out '\n'
+		ui_out "  ${UI_CYAN}1${UI_RESET}  backend → telemt\n"
+		ui_out "  ${UI_CYAN}2${UI_RESET}  backend → official MTProxy\n"
+		ui_out "  ${UI_CYAN}3${UI_RESET}  carrier (websocket / https …)\n"
+		ui_out "  ${UI_CYAN}4${UI_RESET}  ad tag — канал @MTProxybot\n"
+		ui_out "  ${UI_CYAN}5${UI_RESET}  middle-end pool (telemt on/off)\n"
+		ui_out "  ${UI_CYAN}0${UI_RESET}  назад\n\n"
+		local choice
+		choice="$(ui_ask 'Пункт' '')"
+		case "$choice" in
+			0|'') pause_menu; return 0 ;;
+			1) set_backend_engine telemt ;;
+			2) set_backend_engine mtproxy ;;
+			3) cmd_carrier; return 0 ;;
+			4)
+				ui_info '32 hex из @MTProxybot; пусто = удалить'
+				tag="$(ui_ask 'Ad tag' '')"
+				set_ad_tag "$tag"
+				;;
+			5)
+				mp="$(ui_ask 'ME pool (true/false)' "${TELEMT_MIDDLE_PROXY:-false}")"
+				set_middle_proxy "$mp"
+				;;
+			*) ui_warn '0–5' ;;
+		esac
+	done
 }
 
 cmd_uninstall() {
@@ -447,8 +550,9 @@ ${UI_RESET}"
 	ui_out "  ${UI_CYAN}4${UI_RESET}  перезапуск\n"
 	ui_out "  ${UI_CYAN}5${UI_RESET}  обновить\n"
 	ui_out "  ${UI_CYAN}6${UI_RESET}  сменить сайт\n"
-	ui_out "  ${UI_CYAN}7${UI_RESET}  режим carrier ${UI_DIM}(websocket для Desktop)${UI_RESET}\n"
-	ui_out "  ${UI_CYAN}8${UI_RESET}  удалить\n"
+	ui_out "  ${UI_CYAN}7${UI_RESET}  carrier\n"
+	ui_out "  ${UI_CYAN}8${UI_RESET}  MTProxy / telemt ${UI_DIM}(ad tag, backend)${UI_RESET}\n"
+	ui_out "  ${UI_CYAN}9${UI_RESET}  удалить\n"
 	ui_out "  ${UI_CYAN}0${UI_RESET}  выход\n"
 	ui_out '\n'
 }
@@ -468,9 +572,10 @@ cmd_menu() {
 			5|u|update) cmd_update ;;
 			6|site|w) cmd_site ;;
 			7|carrier|t) cmd_carrier ;;
-			8|x|uninstall) cmd_uninstall; break ;;
+			8|proxy|p|backend) cmd_proxy ;;
+			9|x|uninstall) cmd_uninstall; break ;;
 			0|q|quit|exit|'') break ;;
-			*) ui_warn '1–8 или 0'; sleep 1 ;;
+			*) ui_warn '1–9 или 0'; sleep 1 ;;
 		esac
 	done
 }
@@ -487,6 +592,7 @@ tgwebpr
   tgwebpr update
   tgwebpr site         сменить HTML-шаблон
   tgwebpr carrier      режим транспорта (websocket / https …)
+  tgwebpr proxy        backend, ad tag, ME pool
   tgwebpr uninstall
 EOF
 }
@@ -510,6 +616,7 @@ case "${1:-menu}" in
 	update) cmd_update ;;
 	site|template) cmd_site ;;
 	carrier|transport) cmd_carrier ;;
+	proxy|backend|mtproxy) cmd_proxy ;;
 	uninstall|remove) cmd_uninstall ;;
 	_install_cli) install_cli "${2:?}" ;;
 	-h|--help|help) usage ;;

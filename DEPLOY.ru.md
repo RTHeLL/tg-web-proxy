@@ -19,6 +19,7 @@ tgwebpr restart
 tgwebpr update       # если github.com не резолвится — rebuild с диска
 tgwebpr site         # сменить шаблон 1–6
 tgwebpr carrier      # режим транспорта (см. ниже)
+tgwebpr proxy        # backend, ad tag (@MTProxybot), ME pool
 tgwebpr uninstall
 ```
 
@@ -48,6 +49,23 @@ sudo tgwebpr restart
 | `websocket` | Telegram Desktop (рекомендуется) |
 | `https-lanes` | если websocket блокируется, но HTTP проходит |
 | `https` | совместимость, на Desktop часто «подключён без трафика» |
+
+## MTProxy / telemt — ad tag и backend
+
+Рекламный канал (promo) задаётся через [@MTProxybot](https://t.me/MTProxybot) — 32 hex-символа:
+
+```bash
+tgwebpr proxy          # пункт 4 — ad tag
+# или в .env:
+# MTPROXY_AD_TAG=00112233445566778899aabbccddeeff
+```
+
+Там же:
+- **backend** — `telemt` (рекомендуется) или `mtproxy` (official)
+- **carrier** — `websocket` для Desktop
+- **ME pool** — middle-end proxy в telemt (`true`/`false`, по умолчанию `false`)
+
+После смены — контейнер перезапускается автоматически.
 
 ## Шаг «сайт на домене» при установке
 

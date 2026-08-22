@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tap Menu — Ember &amp; Thyme Kitchen</title>
+  <meta name="description" content="Scan, browse, and order from our seasonal menu. Wood-fired small plates and natural wines in Portland.">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="site-header">
+    <a class="mark" href="/">
+      <span class="mark-badge" aria-hidden="true">&#9733;</span>
+      Tap Menu
+    </a>
+    <nav>
+      <a href="/about">About</a>
+      <a href="/privacy">Privacy</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero-banner">
+      <p class="eyebrow">Ember &amp; Thyme Kitchen</p>
+      <h1>Seasonal plates, scanned straight from your table.</h1>
+      <p class="lede">
+        Wood-fired vegetables, hand-rolled pasta, and a rotating natural wine
+        list. Tap a category below to explore tonight's menu.
+      </p>
+    </section>
+
+    <div class="hours-strip">
+      <span><strong>Open</strong> Tue–Sun 17:00–22:00</span>
+      <span><strong>Table</strong> 12 · Patio · Bar</span>
+    </div>
+
+    <nav class="menu-nav" aria-label="Menu categories">
+      <a href="#starters">Starters</a>
+      <a href="#mains">Mains</a>
+      <a href="#sides">Sides</a>
+      <a href="#desserts">Desserts</a>
+    </nav>
+
+    <div class="section-head" id="starters">
+      <h2>Starters</h2>
+      <p>Shareable plates from the hearth oven.</p>
+    </div>
+
+    <section class="dish-list" aria-label="Starter dishes">
+      <article class="dish-card">
+        <div class="dish-thumb" aria-hidden="true">&#127838;</div>
+        <div class="dish-body">
+          <div class="dish-top">
+            <h3>Charred sourdough</h3>
+            <span class="dish-price">$9</span>
+          </div>
+          <div class="dish-tags">
+            <span class="dish-tag">Vegan</span>
+          </div>
+          <p class="dish-desc">
+            Cultured butter, flaky salt, and rosemary-infused olive oil.
+          </p>
+        </div>
+      </article>
+      <article class="dish-card">
+        <div class="dish-thumb" aria-hidden="true">&#129382;</div>
+        <div class="dish-body">
+          <div class="dish-top">
+            <h3>Roasted beet tartare</h3>
+            <span class="dish-price">$14</span>
+          </div>
+          <div class="dish-tags">
+            <span class="dish-tag">GF</span>
+            <span class="dish-tag">Vegan</span>
+          </div>
+          <p class="dish-desc">
+            Smoked cashew cream, pickled shallots, and herb oil.
+          </p>
+        </div>
+      </article>
+      <article class="dish-card">
+        <div class="dish-thumb" aria-hidden="true">&#129370;</div>
+        <div class="dish-body">
+          <div class="dish-top">
+            <h3>Wood-oven mushrooms</h3>
+            <span class="dish-price">$16</span>
+          </div>
+          <div class="dish-tags">
+            <span class="dish-tag">GF</span>
+          </div>
+          <p class="dish-desc">
+            Maitake and trumpet mushrooms with thyme butter and lemon.
+          </p>
+        </div>
+      </article>
+    </section>
+
+    <div class="section-head" id="mains">
+      <h2>Mains</h2>
+      <p>Pasta and hearth proteins — portions sized for sharing.</p>
+    </div>
+
+    <section class="dish-list" aria-label="Main dishes">
+      <article class="dish-card">
+        <div class="dish-thumb" aria-hidden="true">&#127837;</div>
+        <div class="dish-body">
+          <div class="dish-top">
+            <h3>Tagliatelle al ragù</h3>
+            <span class="dish-price">$24</span>
+          </div>
+          <p class="dish-desc">
+            Slow-braised beef cheek, aged parmesan, and black pepper.
+          </p>
+        </div>
+      </article>
+      <article class="dish-card">
+        <div class="dish-thumb" aria-hidden="true">&#129385;</div>
+        <div class="dish-body">
+          <div class="dish-top">
+            <h3>Steelhead trout</h3>
+            <span class="dish-price">$28</span>
+          </div>
+          <div class="dish-tags">
+            <span class="dish-tag">GF</span>
+          </div>
+          <p class="dish-desc">
+            Crisp skin, fennel salad, and preserved lemon beurre blanc.
+          </p>
+        </div>
+      </article>
+    </section>
+
+    <div class="section-head" id="sides">
+      <h2>Sides</h2>
+      <p>Add-ons for the table.</p>
+    </div>
+
+    <section class="dish-list" aria-label="Side dishes">
+      <article class="dish-card">
+        <div class="dish-thumb" aria-hidden="true">&#129361;</div>
+        <div class="dish-body">
+          <div class="dish-top">
+            <h3>Grilled broccolini</h3>
+            <span class="dish-price">$8</span>
+          </div>
+          <div class="dish-tags">
+            <span class="dish-tag">Vegan</span>
+            <span class="dish-tag">GF</span>
+          </div>
+          <p class="dish-desc">Chili flakes, toasted almonds, and citrus zest.</p>
+        </div>
+      </article>
+    </section>
+
+    <div class="section-head" id="desserts">
+      <h2>Desserts</h2>
+      <p>Finish with something from the pastry counter.</p>
+    </div>
+
+    <section class="dish-list" aria-label="Dessert dishes">
+      <article class="dish-card">
+        <div class="dish-thumb" aria-hidden="true">&#127856;</div>
+        <div class="dish-body">
+          <div class="dish-top">
+            <h3>Olive oil cake</h3>
+            <span class="dish-price">$11</span>
+          </div>
+          <p class="dish-desc">
+            Blood orange segments, mascarpone, and pistachio crumble.
+          </p>
+        </div>
+      </article>
+    </section>
+
+    <div class="info-cards">
+      <article class="info-card">
+        <h3>Allergies &amp; dietary notes</h3>
+        <p>
+          Tell your server about allergies before ordering. GF and vegan tags
+          indicate base recipes; cross-contact may occur in our open kitchen.
+        </p>
+      </article>
+      <article class="info-card">
+        <h3>Ordering at the table</h3>
+        <p>
+          Show this menu to your server or mention the dish name. We do not
+          process payments through this page — settle your bill with staff.
+        </p>
+      </article>
+    </div>
+
+    <section class="cta-band">
+      <h2>Visit us on SE Hawthorne</h2>
+      <p>2847 SE Hawthorne Blvd · Portland, OR · Street parking after 18:00</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p class="footer-title">Ember &amp; Thyme Kitchen</p>
+    <p>2847 SE Hawthorne Blvd, Portland, OR 97214</p>
+    <p class="footer-copy">&copy; 2026 Ember &amp; Thyme LLC</p>
+  </footer>
+</body>
+</html>

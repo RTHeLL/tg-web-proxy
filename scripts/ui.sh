@@ -168,45 +168,49 @@ ui_pick_site() {
 		return 0
 	fi
 
-	# порядок и подписи фиксированы — меню не зависит от того, клонирован ли уже репо
-	site_ids=(northwind-field studio-garden atlas-books harbor-dental craft-roastery pixel-repair)
-	site_labels=(
-		'Northwind Field Notes — полевые заметки'
-		'Studio Garden — ландшафт'
-		'Atlas Books — книжный'
-		'Harbor Dental — стоматология'
-		'Craft Roastery — кофе'
-		'Pixel Repair — ремонт техники'
-	)
+	local ui_dir
+	ui_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+	if [[ -f "$ui_dir/sites.sh" ]]; then
+		# shellcheck source=scripts/sites.sh
+		source "$ui_dir/sites.sh"
+	fi
+
+	# порядок из web/sites/* — меню подхватывает все шаблоны
+	load_site_catalog "$root"
+	if [[ ${#SITE_IDS[@]} -eq 0 ]]; then
+		ui_warn 'нет шаблонов в web/sites/'
+		printf '%s' "${2:-speedtest}"
+		return 0
+	fi
 
 	ui_line
 	ui_out "${UI_BOLD}Шаг 3 из 4 · сайт на вашем домене${UI_RESET}\n"
-	ui_info 'По адресу https://ваш-домен/ откроется обычная страница (книжный, кофейня и т.п.).'
+	ui_info 'По адресу https://ваш-домен/ откроется обычная страница.'
 	ui_info 'Это только обложка. Прокси работает независимо от текста на сайте.'
-	ui_info 'Enter = пункт 2'
+	ui_info 'Enter = первый пункт'
 	ui_out '\n'
 
 	i=1
-	for label in "${site_labels[@]}"; do
-		id="${site_ids[$((i - 1))]}"
-		ui_out "  ${UI_CYAN}${i})${UI_RESET}  ${label}\n"
+	for label in "${SITE_LABELS[@]}"; do
+		id="${SITE_IDS[$((i - 1))]}"
+		ui_out "  ${UI_CYAN}${i})${UI_RESET}  ${id} — ${label}\n"
 		i=$((i + 1))
 	done
 
 	ui_out '\n'
 	while true; do
-		choice="$(ui_ask 'Номер пункта' '2')"
-		if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#site_ids[@]} )); then
-			printf '%s' "${site_ids[$((choice - 1))]}"
+		choice="$(ui_ask 'Номер или id' '1')"
+		if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#SITE_IDS[@]} )); then
+			printf '%s' "${SITE_IDS[$((choice - 1))]}"
 			return 0
 		fi
-		for id in "${site_ids[@]}"; do
+		for id in "${SITE_IDS[@]}"; do
 			if [[ "$choice" == "$id" ]]; then
 				printf '%s' "$id"
 				return 0
 			fi
 		done
-		ui_warn 'введи номер из списка (1–6)'
+		ui_warn "введи номер 1–${#SITE_IDS[@]} или id папки"
 	done
 }
 

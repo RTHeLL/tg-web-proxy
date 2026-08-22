@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About — Trace Board</title>
+  <meta name="description" content="How Trace Board ingests spans, stores telemetry, and surfaces release health.">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="site-header">
+    <a class="mark" href="/">
+      <span class="mark-icon" aria-hidden="true">TB</span>
+      Trace Board
+    </a>
+    <nav>
+      <a href="/about">About</a>
+      <a href="/privacy">Privacy</a>
+    </nav>
+  </header>
+
+  <main class="narrow">
+    <h1>About the platform</h1>
+    <p>
+      Trace Board is an observability workspace for teams that ship frequently
+      and need trace-level context during incidents. We focus on latency
+      budgets, span correlation, and deployment annotations — not vanity
+      dashboards that nobody opens at 2 a.m.
+    </p>
+    <p>
+      The product started as an internal tool at a payments company where
+      microsecond-level tail latency directly affected authorization rates.
+      Today we serve platform teams across fintech, logistics, and SaaS.
+    </p>
+
+    <h2>Ingest pipeline</h2>
+    <ul class="bench-list">
+      <li><code>01</code> Agents send OTLP or Zipkin spans to a regional collector</li>
+      <li><code>02</code> Spans are normalized, sampled, and indexed within 40 ms median</li>
+      <li><code>03</code> Hot storage retains fourteen days; cold archive holds one year</li>
+      <li><code>04</code> Query API serves flamegraphs and service maps from the same index</li>
+    </ul>
+
+    <h2>What we do not do</h2>
+    <p>
+      Trace Board is not a log aggregator or a metrics-only APM. We do not
+      replace your existing time-series stack — we complement it with
+      request-path visibility. Session replay, RUM beacons, and marketing
+      analytics are out of scope.
+    </p>
+    <p>
+      Enterprise customers may deploy collectors inside their VPC. Self-hosted
+      query nodes are available for regulated industries that require data
+      residency controls.
+    </p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-grid">
+      <div>
+        <p class="footer-title">Trace Board Inc.</p>
+        <p>440 Market Street, Suite 900<br>San Francisco, CA 94102</p>
+      </div>
+      <div>
+        <p class="footer-title">Support hours</p>
+        <p>Mon–Fri 9:00–18:00 PT<br>Enterprise on-call coverage available</p>
+      </div>
+    </div>
+    <p class="footer-copy">&copy; 2026 Trace Board Inc.</p>
+  </footer>
+</body>
+</html>

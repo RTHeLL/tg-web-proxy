@@ -20,7 +20,8 @@ require_env TPROXY_SECRET
 
 : "${CARRIER_MODE:=websocket}"
 : "${BACKEND:=telemt}"
-export CARRIER_MODE BACKEND
+: "${TELEMT_MIDDLE_PROXY:=false}"
+export CARRIER_MODE BACKEND TELEMT_MIDDLE_PROXY
 
 mkdir -p /etc/mtproxy /etc/tproxy-server /etc/caddy /etc/telemt /srv/tproxy-site
 
@@ -36,11 +37,24 @@ case "$backend_secret" in
 esac
 
 write_telemt_config() {
+	ad_tag_line=""
+	if [ -n "${MTPROXY_AD_TAG:-}" ]; then
+		ad_tag_line="ad_tag = \"${MTPROXY_AD_TAG}\""
+	fi
 	sed \
 		-e "s/__TELEMT_CLASSIC__/${telemt_classic}/" \
 		-e "s/__TELEMT_SECURE__/${telemt_secure}/" \
+		-e "s/__TELEMT_MIDDLE_PROXY__/${TELEMT_MIDDLE_PROXY}/" \
 		-e "s/__TPROXY_SECRET_HEX__/${backend_secret}/" \
+		-e "s/__AD_TAG_LINE__/${ad_tag_line}/" \
 		/etc/telemt/telemt.template.toml > /etc/telemt/telemt.toml
+	if [ -n "${MTPROXY_AD_TAG:-}" ]; then
+		cat >> /etc/telemt/telemt.toml <<EOF
+
+[access.user_ad_tags]
+web = "${MTPROXY_AD_TAG}"
+EOF
+	fi
 	chmod 0640 /etc/telemt/telemt.toml
 }
 
@@ -73,6 +87,10 @@ start_mtproxy() {
 	chmod 0640 /etc/mtproxy/proxy-secret /etc/mtproxy/proxy-multi.conf
 
 	log "starting MTProxy backend (official)"
+	mtproxy_args=""
+	if [ -n "${MTPROXY_AD_TAG:-}" ]; then
+		mtproxy_args="-P ${MTPROXY_AD_TAG}"
+	fi
 	/usr/local/bin/mtproto-proxy \
 		-u nobody \
 		-p 8888 \
@@ -81,7 +99,8 @@ start_mtproxy() {
 		--aes-pwd /etc/mtproxy/proxy-secret \
 		/etc/mtproxy/proxy-multi.conf \
 		-M "${MTPROXY_WORKERS:-1}" \
-		-C "${MTPROXY_MAX_CONNECTIONS:-4096}" &
+		-C "${MTPROXY_MAX_CONNECTIONS:-4096}" \
+		$mtproxy_args &
 	backend_pid=$!
 }
 

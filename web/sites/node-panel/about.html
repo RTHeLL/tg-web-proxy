@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About — Node Panel</title>
+  <meta name="description" content="Node Panel infrastructure, datacenters, and support model.">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="site-header">
+    <a class="mark" href="/">
+      <span class="mark-led" aria-hidden="true"></span>
+      Node Panel
+    </a>
+    <nav>
+      <a href="/about">About</a>
+      <a href="/privacy">Privacy</a>
+    </nav>
+  </header>
+
+  <main class="narrow">
+    <h1>About our infrastructure</h1>
+    <p>
+      Node Panel operates bare-metal hosts in Frankfurt, Amsterdam, and London
+      with AMD EPYC processors and enterprise NVMe storage. Virtual machines
+      run on KVM with virtio drivers and live migration between racks in the
+      same region.
+    </p>
+    <p>
+      We built the control panel for teams who outgrew shared hosting but
+      did not want the complexity of hyperscaler IAM. Every resource — VMs,
+      volumes, floating IPs, firewall groups — is addressable through the
+      same REST API the web UI uses.
+    </p>
+
+    <h2>Provisioning flow</h2>
+    <ul class="bench-list">
+      <li><code>01</code> Choose region, plan, and base image in the panel or via CLI</li>
+      <li><code>02</code> Cloud-init runs on first boot; SSH keys injected automatically</li>
+      <li><code>03</code> Instance receives public IPv4 and optional private VLAN address</li>
+      <li><code>04</code> Snapshots and firewall rules attach without reboot when possible</li>
+    </ul>
+
+    <h2>Compliance &amp; peering</h2>
+    <p>
+      Datacenters hold ISO 27001 certification. Customer data stays in the
+      selected region unless you configure cross-region replication. We peer
+      with major European transit providers and publish monthly latency
+      matrices on request.
+    </p>
+    <p>
+      Node Panel is not a CDN, managed Kubernetes provider, or domain
+      registrar. We focus on reliable compute and leave application
+      orchestration to your toolchain of choice.
+    </p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-grid">
+      <div>
+        <p class="footer-title">Node Panel GmbH</p>
+        <p>Landsberger Str. 88<br>80339 Munich, Germany</p>
+      </div>
+      <div>
+        <p class="footer-title">Network operations</p>
+        <p>Mon–Sun 24h NOC<br>Status page updated every 60 seconds</p>
+      </div>
+    </div>
+    <p class="footer-copy">&copy; 2026 Node Panel GmbH</p>
+  </footer>
+</body>
+</html>

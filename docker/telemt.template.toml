@@ -1,9 +1,10 @@
 # Generated at container start — loopback backend for tproxy-server (:2398).
 [general]
-use_middle_proxy = false
+use_middle_proxy = __TELEMT_MIDDLE_PROXY__
 fast_mode = true
 prefer_ipv6 = false
 log_level = "normal"
+__AD_TAG_LINE__
 
 [general.links]
 show = []

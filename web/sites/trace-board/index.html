@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trace Board — Project Analytics</title>
+  <meta name="description" content="Distributed trace visualization, latency budgets, and release health dashboards for engineering teams.">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="site-header">
+    <a class="mark" href="/">
+      <span class="mark-icon" aria-hidden="true">TB</span>
+      Trace Board
+    </a>
+    <nav>
+      <a href="/about">About</a>
+      <a href="/privacy">Privacy</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Observability · Release health</p>
+        <h1>See every request path before your users feel the lag.</h1>
+        <p class="lede">
+          Trace Board aggregates spans, error budgets, and deployment markers
+          into one dark-room dashboard. Teams spot regressions within minutes of
+          a rollout — not after the support queue fills up.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="/about">View platform overview</a>
+          <a class="btn btn-ghost" href="/privacy">Data handling</a>
+        </div>
+      </div>
+
+      <aside class="dashboard-preview" aria-label="Sample dashboard preview">
+        <div class="preview-bar">
+          <span class="preview-dot"></span>
+          <span class="preview-dot"></span>
+          <span class="preview-dot"></span>
+          <span class="preview-title">prod-api · last 15m</span>
+        </div>
+        <div class="preview-body">
+          <div class="stat-row">
+            <div class="stat-card">
+              <p class="stat-label">P99 latency</p>
+              <p class="stat-value">142ms</p>
+              <p class="stat-delta down">-18ms vs baseline</p>
+            </div>
+            <div class="stat-card">
+              <p class="stat-label">Error rate</p>
+              <p class="stat-value">0.04%</p>
+              <p class="stat-delta up">within SLO</p>
+            </div>
+            <div class="stat-card">
+              <p class="stat-label">Active traces</p>
+              <p class="stat-value">8.2k</p>
+              <p class="stat-delta up">+12% traffic</p>
+            </div>
+          </div>
+          <div class="chart-panel">
+            <p class="chart-label">Request volume by service</p>
+            <div class="bar-chart" aria-hidden="true">
+              <div class="bar"></div>
+              <div class="bar"></div>
+              <div class="bar"></div>
+              <div class="bar"></div>
+              <div class="bar"></div>
+              <div class="bar"></div>
+              <div class="bar"></div>
+              <div class="bar"></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="metrics-strip" aria-label="Platform metrics">
+      <article class="metric">
+        <p class="metric-value">40ms</p>
+        <p class="metric-label">Median ingest delay</p>
+      </article>
+      <article class="metric">
+        <p class="metric-value">14d</p>
+        <p class="metric-label">Hot retention window</p>
+      </article>
+      <article class="metric">
+        <p class="metric-value">99.9%</p>
+        <p class="metric-label">Query availability SLA</p>
+      </article>
+      <article class="metric">
+        <p class="metric-value">Open</p>
+        <p class="metric-label">OTLP &amp; Zipkin ingest</p>
+      </article>
+    </section>
+
+    <div class="section-head">
+      <h2>Built for on-call, not slide decks</h2>
+      <p>Every panel answers a question engineers ask during incidents.</p>
+    </div>
+
+    <section class="feature-grid">
+      <article class="card">
+        <p class="card-icon">span_tree</p>
+        <h3>Flamegraph explorer</h3>
+        <p>
+          Drill from service map to individual spans. Compare canary and
+          production traces side by side after each deploy.
+        </p>
+      </article>
+      <article class="card">
+        <p class="card-icon">budget_alert</p>
+        <h3>Error budget burn</h3>
+        <p>
+          Rolling SLO windows with burn-rate alerts. Pager thresholds tuned
+          to your team's incident response playbook.
+        </p>
+      </article>
+      <article class="card">
+        <p class="card-icon">deploy_pin</p>
+        <h3>Release markers</h3>
+        <p>
+          Annotate charts with git SHA and rollout timestamps. Correlate latency
+          spikes to the exact commit that introduced them.
+        </p>
+      </article>
+    </section>
+
+    <div class="section-head">
+      <h2>Live trace sample</h2>
+      <p>Representative spans from a checkout flow — names anonymized.</p>
+    </div>
+
+    <section class="trace-list" aria-label="Sample trace spans">
+      <div class="trace-row">
+        <span>12:04:18</span>
+        <span>checkout.api POST /v2/orders</span>
+        <span>89ms</span>
+        <span>200</span>
+      </div>
+      <div class="trace-row">
+        <span>12:04:18</span>
+        <span>inventory.svc reserve_items</span>
+        <span>22ms</span>
+        <span>200</span>
+      </div>
+      <div class="trace-row">
+        <span>12:04:18</span>
+        <span>payments.gw authorize_card</span>
+        <span>156ms</span>
+        <span>200</span>
+      </div>
+      <div class="trace-row">
+        <span>12:04:19</span>
+        <span>notify.worker enqueue_receipt</span>
+        <span>8ms</span>
+        <span>202</span>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <div>
+        <h2>Start with a read-only workspace</h2>
+        <p>
+          Connect your existing OTLP endpoint and explore fourteen days of
+          history before enabling write access for your team.
+        </p>
+      </div>
+      <a class="btn btn-primary" href="/about">Read setup guide</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-grid">
+      <div>
+        <p class="footer-title">Trace Board Inc.</p>
+        <p>440 Market Street, Suite 900<br>San Francisco, CA 94102</p>
+      </div>
+      <div>
+        <p class="footer-title">Support hours</p>
+        <p>Mon–Fri 9:00–18:00 PT<br>Enterprise on-call coverage available</p>
+      </div>
+    </div>
+    <p class="footer-copy">&copy; 2026 Trace Board Inc.</p>
+  </footer>
+</body>
+</html>

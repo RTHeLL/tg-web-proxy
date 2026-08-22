@@ -23,8 +23,9 @@ tgwebpr creds      # hostname + key
 tgwebpr logs       # Ctrl+C → обратно в меню
 tgwebpr restart
 tgwebpr update     # git pull (если DNS ок) + rebuild
-tgwebpr site       # сменить HTML-шаблон
+tgwebpr site       # сменить HTML-шаблон (12+ вариантов)
 tgwebpr carrier    # режим транспорта (websocket для Desktop)
+tgwebpr proxy        # backend telemt/mtproxy, ad tag, ME pool
 tgwebpr uninstall
 ```
 
