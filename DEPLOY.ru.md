@@ -71,3 +71,21 @@ sudo bash deploy/install.sh \
 | 80/443 заняты | убрать nginx/caddy на хосте |
 | Connecting в TG | `tgwebpr creds` — сверить hostname/key |
 | Подключён, но пусто | `tgwebpr carrier` → websocket + переподключить proxy в TG |
+| `docker.io ... network is unreachable` (IPv6) | убрали лишний pull в Dockerfile; если снова — отключить IPv6 на VPS (см. ниже) |
+
+### Docker build: `registry-1.docker.io ... network is unreachable`
+
+На VPS без рабочего IPv6 Docker иногда лезет в Hub по IPv6 и падает. После `git pull` / обновления кода пересоберите:
+
+```bash
+cd /opt/tg-web-proxy && docker compose --env-file .env build
+```
+
+Если ошибка осталась — временно отключите IPv6 и перезапустите Docker:
+
+```bash
+sysctl -w net.ipv6.conf.all.disable_ipv6=1
+sysctl -w net.ipv6.conf.default.disable_ipv6=1
+systemctl restart docker
+cd /opt/tg-web-proxy && docker compose --env-file .env build && docker compose --env-file .env up -d
+```

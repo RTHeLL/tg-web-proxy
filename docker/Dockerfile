@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 FROM debian:bookworm-slim AS mtproxy-builder
 ARG MTPROXY_COMMIT=f36d8af769ffaeac36978d38c2c0f6d1104c2137
 ARG MTPROXY_SHA256=919795c416b870670841a21d1930ad97a24c7b84b9eb8c6f9e3de32f2fdf4655
