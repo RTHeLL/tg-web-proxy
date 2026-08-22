@@ -171,11 +171,15 @@ cmd_status() {
 	fi
 
 	https='нет'
-	# hairpin NAT на VPS часто ломает curl к своему публичному IP — проверяем через loopback
-	if timeout 8 curl --fail --silent --max-time 5 \
+	# Caddy слушает внутри контейнера — надёжнее, чем curl с хоста через docker-proxy
+	if timeout 8 docker exec tg-web-proxy curl --fail --silent --max-time 5 \
 		--resolve "${TPROXY_HOSTNAME}:443:127.0.0.1" \
 		"https://${TPROXY_HOSTNAME}/" >/dev/null 2>&1; then
 		https='да'
+	elif timeout 8 curl -4 --fail --silent --max-time 5 \
+		--resolve "${TPROXY_HOSTNAME}:443:127.0.0.1" \
+		"https://${TPROXY_HOSTNAME}/" >/dev/null 2>&1; then
+		https='да (host)'
 	fi
 
 	backend='?'
@@ -204,12 +208,17 @@ cmd_status() {
 		"Carrier  : ${carrier}${carrier_hint}" \
 		"Контейнер: ${container}" \
 		"Ready    : ${ready} (relay + MTProxy :2398)" \
-		"HTTPS    : ${https} (loopback)" \
+		"HTTPS    : ${https}" \
 		"Backend  : ${backend}"
 
-	if [[ "$ready" == "да" && "$https" == "да" ]]; then
-		ui_info 'если TG «подключён», но чаты пустые — tgwebpr carrier → websocket'
-		ui_info 'вкладка браузера из TG — запасной путь, не основной режим'
+	if [[ "$ready" == "да" ]]; then
+		if [[ "$https" == "нет" ]]; then
+			ui_warn 'HTTPS-проверка не прошла — если сайт открывается в браузере, это ложный минус'
+		fi
+		if [[ "$https" == да* && "${backend}" == "ok" ]]; then
+			ui_ok 'стек в порядке — переподключите WEB proxy в Telegram (tgwebpr creds)'
+		fi
+		ui_info 'если TG «подключён», но чаты пустые — пересоздайте proxy в Settings → Advanced → Proxy'
 		if [[ "${backend:-}" == dial_failures=* && "${backend#dial_failures=}" != "0" ]]; then
 			ui_warn 'MTProxy не достучался до DC Telegram — проверьте исходящий трафик VPS'
 		fi
