@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# tgwebpr — управление установленным tg-web-proxy
+# tgwebpr — управление tg-web-proxy
 set -euo pipefail
 
 CONF="/etc/default/tgwebpr"
 INSTALL_DIR="/opt/tg-web-proxy"
+IN_MENU=0
 
 if [[ -f "$CONF" ]]; then
 	# shellcheck disable=SC1090
@@ -14,98 +15,168 @@ if [[ -f "$INSTALL_DIR/scripts/ui.sh" ]]; then
 	# shellcheck source=scripts/ui.sh
 	source "$INSTALL_DIR/scripts/ui.sh"
 else
-	ui_ok() { printf '%s\n' "$1"; }
-	ui_warn() { printf '%s\n' "$1" >&2; }
-	ui_fail() { printf '%s\n' "$1" >&2; }
-	ui_info() { printf '%s\n' "$1"; }
-	ui_box() { shift; while [[ $# -gt 0 ]]; do echo "$1"; shift; done; }
-	ui_line() { echo '---'; }
+	UI_RESET=$'\033[0m' UI_BOLD=$'\033[1m' UI_DIM=$'\033[2m'
+	UI_CYAN=$'\033[36m' UI_GREEN=$'\033[32m' UI_YELLOW=$'\033[33m'
+	UI_RED=$'\033[31m' UI_BLUE=$'\033[34m'
+	ui_out() { printf '%b' "$1" >/dev/tty 2>/dev/null || printf '%b' "$1"; }
+	ui_ok() { ui_out "  ${UI_GREEN}✓${UI_RESET} $1\n"; }
+	ui_warn() { ui_out "  ${UI_YELLOW}!${UI_RESET} $1\n"; }
+	ui_fail() { ui_out "  ${UI_RED}✗${UI_RESET} $1\n"; }
+	ui_info() { ui_out "  ${UI_DIM}·${UI_RESET} $1\n"; }
+	ui_line() { ui_out "${UI_DIM}────────────────────────────────────────────────${UI_RESET}\n"; }
+	ui_box() {
+		local title="$1"; shift
+		ui_line
+		ui_out "${UI_BOLD}${title}${UI_RESET}\n"
+		while [[ $# -gt 0 ]]; do ui_out "  $1\n"; shift; done
+		ui_line
+	}
 	ui_ask() {
-		local p="$1" d="${2:-}"
-		if [[ -r /dev/tty ]]; then
-			[[ -n "$d" ]] && printf '%s [%s]: ' "$p" "$d" > /dev/tty || printf '%s: ' "$p" > /dev/tty
-			IFS= read -r r < /dev/tty || r=""
-		else
-			[[ -n "$d" ]] && printf '%s [%s]: ' "$p" "$d" || printf '%s: ' "$p"
-			IFS= read -r r || r=""
-		fi
+		local p="$1" d="${2:-}" r=""
+		[[ -n "$d" ]] && ui_out "${UI_BOLD}${p}${UI_RESET} [${d}]: " || ui_out "${UI_BOLD}${p}${UI_RESET}: "
+		IFS= read -r r < /dev/tty || r=""
 		[[ -z "$r" && -n "$d" ]] && r="$d"
 		printf '%s' "$r"
 	}
-	ui_ask_yes() { local p="$1"; printf '%s [y/N]: ' "$p"; read -r r; [[ "$r" == y || "$r" == Y || "$r" == да ]]; }
+	ui_ask_yes() {
+		local p="$1" d="${2:-y}" r=""
+		[[ "$d" == "y" ]] && hint='Y/n' || hint='y/N'
+		ui_out "${UI_BOLD}${p}${UI_RESET} (${hint}): "
+		IFS= read -r r < /dev/tty || r=""
+		r="$(printf '%s' "$r" | tr '[:upper:]' '[:lower:]')"
+		[[ -z "$r" ]] && r="$d"
+		[[ "$r" == "y" || "$r" == "yes" || "$r" == "д" || "$r" == "да" ]]
+	}
+	ui_pick_site() { printf '%s' "${2:-studio-garden}"; }
 fi
+
+# цвета даже если stdin не TTY (меню читает /dev/tty)
+if [[ -r /dev/tty && -w /dev/tty ]]; then
+	UI_RESET=$'\033[0m' UI_BOLD=$'\033[1m' UI_DIM=$'\033[2m'
+	UI_CYAN=$'\033[36m' UI_GREEN=$'\033[32m' UI_YELLOW=$'\033[33m'
+	UI_RED=$'\033[31m' UI_BLUE=$'\033[34m'
+fi
+
+SITE_IDS=(northwind-field studio-garden atlas-books harbor-dental craft-roastery pixel-repair)
+SITE_LABELS=(
+	'Northwind Field Notes — полевые заметки'
+	'Studio Garden — ландшафт'
+	'Atlas Books — книжный'
+	'Harbor Dental — стоматология'
+	'Craft Roastery — кофе'
+	'Pixel Repair — ремонт техники'
+)
 
 require_installed() {
 	if [[ ! -f "$INSTALL_DIR/docker-compose.yml" || ! -f "$INSTALL_DIR/.env" ]]; then
-		ui_fail "не найдена установка в $INSTALL_DIR"
+		ui_fail "нет установки в $INSTALL_DIR"
 		exit 1
 	fi
 }
 
 require_root() {
 	if [[ "$(id -u)" -ne 0 ]]; then
-		ui_fail 'нужен root: sudo tgwebpr …'
+		ui_fail 'нужен root: sudo tgwebpr'
 		exit 1
 	fi
 }
 
 load_env() {
 	require_installed
+	set -a
 	# shellcheck disable=SC1091
 	source "$INSTALL_DIR/.env"
+	set +a
 }
 
 compose() {
 	require_root
-	cd "$INSTALL_DIR"
-	docker compose --env-file .env "$@"
+	(
+		cd "$INSTALL_DIR"
+		docker compose --env-file .env "$@"
+	)
+}
+
+pause_menu() {
+	[[ "$IN_MENU" -eq 1 ]] || return 0
+	ui_out "\n${UI_DIM}Enter — в меню${UI_RESET}"
+	IFS= read -r _ < /dev/tty || true
+}
+
+clear_screen() {
+	if [[ -t 1 ]] || [[ -w /dev/tty ]]; then
+		printf '\033[H\033[2J' >/dev/tty 2>/dev/null || printf '\033[H\033[2J'
+	fi
 }
 
 cmd_status() {
 	load_env
 	require_root
-	cd "$INSTALL_DIR"
+	ui_out "  ${UI_DIM}проверяю…${UI_RESET}\n"
+
+	container='нет'
+	if compose ps --status running --format '{{.Name}}' 2>/dev/null | grep -q .; then
+		container='да'
+	elif compose ps -q 2>/dev/null | grep -q .; then
+		container='есть (не running?)'
+	fi
 
 	ready='нет'
-	if compose exec -T tproxy curl --fail --silent http://127.0.0.1:8081/readyz >/dev/null 2>&1; then
+	# короткий таймаут — иначе docker exec / curl могут висеть вечно
+	if timeout 5 docker compose -f "$INSTALL_DIR/docker-compose.yml" --env-file "$INSTALL_DIR/.env" \
+		exec -T tproxy curl --fail --silent --max-time 3 http://127.0.0.1:8081/readyz \
+		>/dev/null 2>&1; then
 		ready='да'
 	fi
 
 	https='нет'
-	if curl --fail --silent --max-time 10 "https://${TPROXY_HOSTNAME}/" >/dev/null 2>&1; then
+	if timeout 8 curl --fail --silent --max-time 5 "https://${TPROXY_HOSTNAME}/" >/dev/null 2>&1; then
 		https='да'
 	fi
 
-	ui_box 'Статус tg-web-proxy' \
+	ui_box 'Статус' \
 		"Hostname : ${TPROXY_HOSTNAME}" \
 		"Site     : ${SITE_VARIANT:-?}" \
-		"Каталог  : ${INSTALL_DIR}" \
+		"Контейнер: ${container}" \
 		"Ready    : ${ready}" \
 		"HTTPS    : ${https}"
 
-	echo
-	compose ps
+	ui_out '\n'
+	compose ps 2>/dev/null || true
+	pause_menu
 }
 
 cmd_creds() {
 	load_env
-	ui_box 'Telegram Desktop · WEB proxy' \
+	ui_box 'Telegram · WEB' \
 		"Hostname : ${TPROXY_HOSTNAME}" \
 		"Key      : ${TPROXY_SECRET}" \
 		"" \
 		"tg://webproxy?server=${TPROXY_HOSTNAME}&secret=${TPROXY_SECRET}"
+	pause_menu
 }
 
 cmd_logs() {
-	lines="${1:-50}"
+	lines="${1:-80}"
 	require_root
-	compose logs --tail="$lines" -f tproxy
+	ui_info 'логи — Ctrl+C чтобы вернуться в меню'
+	ui_out '\n'
+	set +e
+	(
+		trap 'exit 0' INT
+		compose logs --tail="$lines" -f tproxy
+	)
+	set -e
+	ui_out '\n'
+	ui_ok 'логи закрыты'
+	pause_menu
 }
 
 cmd_restart() {
 	require_root
+	ui_out "  ${UI_DIM}перезапуск…${UI_RESET}\n"
 	compose restart tproxy
-	ui_ok 'контейнер перезапущен'
+	ui_ok 'готово'
 	cmd_status
 }
 
@@ -113,75 +184,168 @@ cmd_update() {
 	require_root
 	require_installed
 	cd "$INSTALL_DIR"
+
+	git_ok=0
 	if [[ -d .git ]]; then
-		git fetch origin main -q
-		git pull --ff-only origin main -q
+		ui_out "  ${UI_DIM}git pull…${UI_RESET}\n"
+		if timeout 30 git fetch origin main 2>/tmp/tgwebpr-git.err; then
+			if git pull --ff-only origin main 2>>/tmp/tgwebpr-git.err; then
+				git_ok=1
+				ui_ok 'код обновлён'
+			fi
+		fi
+		if [[ "$git_ok" -eq 0 ]]; then
+			err="$(tr '\n' ' ' </tmp/tgwebpr-git.err 2>/dev/null || true)"
+			ui_warn "git недоступен (${err:-timeout/DNS})"
+			ui_info 'пересобираю то, что уже лежит на диске'
+		fi
+	else
+		ui_warn 'нет .git — только rebuild локального дерева'
 	fi
+
+	# обновить CLI на всякий случай
+	if [[ -f "$INSTALL_DIR/scripts/tgwebpr" ]]; then
+		install -m 0755 "$INSTALL_DIR/scripts/tgwebpr" /usr/local/bin/tgwebpr
+	fi
+
+	ui_out "  ${UI_DIM}docker compose build…${UI_RESET}\n"
 	compose build
 	compose up -d
-	ui_ok 'обновлено'
+	ui_ok 'контейнер пересобран'
 	cmd_status
+}
+
+apply_site() {
+	local site="$1"
+	local site_dir="$INSTALL_DIR/web/sites/$site"
+	if [[ ! -f "$site_dir/index.html" ]]; then
+		ui_fail "нет шаблона: $site"
+		return 1
+	fi
+	mkdir -p "$INSTALL_DIR/runtime/site"
+	if command -v rsync >/dev/null 2>&1; then
+		rsync -a --delete "$site_dir/" "$INSTALL_DIR/runtime/site/"
+	else
+		find "$INSTALL_DIR/runtime/site" -mindepth 1 -delete 2>/dev/null || true
+		cp -a "$site_dir/." "$INSTALL_DIR/runtime/site/"
+	fi
+	if grep -q '^SITE_VARIANT=' "$INSTALL_DIR/.env" 2>/dev/null; then
+		sed -i "s/^SITE_VARIANT=.*/SITE_VARIANT=$site/" "$INSTALL_DIR/.env"
+	else
+		printf 'SITE_VARIANT=%s\n' "$site" >>"$INSTALL_DIR/.env"
+	fi
+	chmod 0600 "$INSTALL_DIR/.env"
+	# сайт монтируется в контейнер — рестарт подхватывает файлы из volume
+	compose restart tproxy >/dev/null 2>&1 || compose up -d
+	ui_ok "сайт: $site"
+}
+
+cmd_site() {
+	require_root
+	load_env
+	ui_out "\n${UI_BOLD}Шаблон сайта на ${TPROXY_HOSTNAME}${UI_RESET}\n"
+	ui_info "сейчас: ${SITE_VARIANT:-?}"
+	ui_info 'Enter = отмена'
+	ui_out '\n'
+	local i=1
+	for label in "${SITE_LABELS[@]}"; do
+		ui_out "  ${UI_CYAN}${i})${UI_RESET}  ${label}\n"
+		i=$((i + 1))
+	done
+	ui_out '\n'
+	local choice site
+	choice="$(ui_ask 'Номер' '')"
+	[[ -z "$choice" ]] && { ui_info 'отменено'; pause_menu; return 0; }
+	if [[ "$choice" =~ ^[1-6]$ ]]; then
+		site="${SITE_IDS[$((choice - 1))]}"
+	else
+		site="$choice"
+	fi
+	apply_site "$site"
+	pause_menu
 }
 
 cmd_uninstall() {
 	require_root
 	require_installed
-	ui_warn "удаляю tg-web-proxy из ${INSTALL_DIR}"
-	if ! ui_ask_yes 'Точно удалить?' 'n'; then
+	ui_warn "удаление ${INSTALL_DIR}"
+	if ! ui_ask_yes 'Удалить WEB proxy с этого сервера?' 'n'; then
 		ui_info 'отменено'
-		exit 0
+		pause_menu
+		return 0
 	fi
 	cd "$INSTALL_DIR"
 	compose down -v 2>/dev/null || compose down 2>/dev/null || true
 	rm -f /usr/local/bin/tgwebpr
 	rm -f "$CONF"
-	if ui_ask_yes "Удалить каталог ${INSTALL_DIR}? (git и .env пропадут)" 'n'; then
+	if ui_ask_yes "Стереть каталог ${INSTALL_DIR}?" 'n'; then
 		rm -rf "$INSTALL_DIR"
 		ui_ok 'каталог удалён'
 	else
-		ui_info "каталог оставлен: ${INSTALL_DIR}"
+		ui_info "оставлен: ${INSTALL_DIR}"
 	fi
-	ui_ok 'tgwebpr снят с системы'
+	ui_ok 'готово'
+	IN_MENU=0
+}
+
+draw_menu() {
+	clear_screen
+	ui_out "${UI_CYAN}${UI_BOLD}
+  ┌─────────────────────────────────────┐
+  │            tgwebpr                  │
+  └─────────────────────────────────────┘
+${UI_RESET}"
+	if [[ -f "$INSTALL_DIR/.env" ]]; then
+		# shellcheck disable=SC1091
+		set -a; source "$INSTALL_DIR/.env" 2>/dev/null || true; set +a
+		ui_out "  ${UI_DIM}${TPROXY_HOSTNAME:-?} · ${SITE_VARIANT:-?}${UI_RESET}\n\n"
+	else
+		ui_out '\n'
+	fi
+	ui_out "  ${UI_CYAN}1${UI_RESET}  статус\n"
+	ui_out "  ${UI_CYAN}2${UI_RESET}  hostname и key\n"
+	ui_out "  ${UI_CYAN}3${UI_RESET}  логи          ${UI_DIM}(Ctrl+C → меню)${UI_RESET}\n"
+	ui_out "  ${UI_CYAN}4${UI_RESET}  перезапуск\n"
+	ui_out "  ${UI_CYAN}5${UI_RESET}  обновить\n"
+	ui_out "  ${UI_CYAN}6${UI_RESET}  сменить сайт\n"
+	ui_out "  ${UI_CYAN}7${UI_RESET}  удалить\n"
+	ui_out "  ${UI_CYAN}0${UI_RESET}  выход\n"
+	ui_out '\n'
 }
 
 cmd_menu() {
+	IN_MENU=1
 	while true; do
-		ui_line
-		ui_out "${UI_BOLD}tgwebpr — управление WEB proxy${UI_RESET}\n"
-		ui_info 's — статус'
-		ui_info 'c — hostname и key для Telegram'
-		ui_info 'l — логи (Ctrl+C выход)'
-		ui_info 'r — перезапуск контейнера'
-		ui_info 'u — обновить из git и пересобрать'
-		ui_info 'x — удалить'
-		ui_info 'q — выход'
-		ui_line
-		choice="$(ui_ask 'Команда' 's')"
+		draw_menu
+		choice="$(ui_ask '›' '')"
 		choice="$(printf '%s' "$choice" | tr '[:upper:]' '[:lower:]')"
+		clear_screen
 		case "$choice" in
-			s|status|1) cmd_status ;;
-			c|creds|2) cmd_creds ;;
-			l|logs|3) cmd_logs 80 ;;
-			r|restart|4) cmd_restart ;;
-			u|update|5) cmd_update ;;
-			x|uninstall|6) cmd_uninstall; break ;;
-			q|quit|exit|0) break ;;
-			*) ui_warn 'не понял — s c l r u x q' ;;
+			1|s|status) cmd_status ;;
+			2|c|creds) cmd_creds ;;
+			3|l|logs) cmd_logs 80 ;;
+			4|r|restart) cmd_restart ;;
+			5|u|update) cmd_update ;;
+			6|site|w) cmd_site ;;
+			7|x|uninstall) cmd_uninstall; break ;;
+			0|q|quit|exit|'') break ;;
+			*) ui_warn '1–7 или 0'; sleep 1 ;;
 		esac
 	done
 }
 
 usage() {
 	cat <<EOF
-tgwebpr — управление tg-web-proxy
+tgwebpr
 
   tgwebpr              меню
-  tgwebpr status       состояние
-  tgwebpr creds        hostname + key
-  tgwebpr logs [N]     логи (по умолчанию 50 строк, -f)
-  tgwebpr restart      перезапуск
-  tgwebpr update       git pull + rebuild
-  tgwebpr uninstall    снять с сервера
+  tgwebpr status
+  tgwebpr creds
+  tgwebpr logs [N]
+  tgwebpr restart
+  tgwebpr update
+  tgwebpr site         сменить HTML-шаблон
+  tgwebpr uninstall
 EOF
 }
 
@@ -190,7 +354,6 @@ install_cli() {
 	require_root
 	install -m 0755 "$root/scripts/tgwebpr" /usr/local/bin/tgwebpr
 	cat >"$CONF" <<EOF
-# tg-web-proxy
 INSTALL_DIR=$root
 EOF
 	chmod 0644 "$CONF"
@@ -203,6 +366,7 @@ case "${1:-menu}" in
 	logs|log) cmd_logs "${2:-50}" ;;
 	restart) cmd_restart ;;
 	update) cmd_update ;;
+	site|template) cmd_site ;;
 	uninstall|remove) cmd_uninstall ;;
 	_install_cli) install_cli "${2:?}" ;;
 	-h|--help|help) usage ;;

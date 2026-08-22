@@ -11,12 +11,13 @@ bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/ins
 ## Управление — tgwebpr
 
 ```bash
-tgwebpr              # интерактивное меню
+tgwebpr              # меню (чистый экран)
 tgwebpr status
-tgwebpr creds        # hostname + key для Telegram
-tgwebpr logs
+tgwebpr creds
+tgwebpr logs         # Ctrl+C возвращает в меню
 tgwebpr restart
-tgwebpr update
+tgwebpr update       # если github.com не резолвится — rebuild с диска
+tgwebpr site         # сменить шаблон 1–6
 tgwebpr uninstall
 ```
 

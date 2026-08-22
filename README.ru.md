@@ -17,12 +17,13 @@ bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/ins
 После установки:
 
 ```bash
-tgwebpr          # меню
-tgwebpr status   # контейнер, ready, https
-tgwebpr creds    # hostname + key
-tgwebpr logs     # логи
-tgwebpr restart  # перезапуск
-tgwebpr update   # git pull + rebuild
+tgwebpr            # меню
+tgwebpr status
+tgwebpr creds      # hostname + key
+tgwebpr logs       # Ctrl+C → обратно в меню
+tgwebpr restart
+tgwebpr update     # git pull (если DNS ок) + rebuild
+tgwebpr site       # сменить HTML-шаблон
 tgwebpr uninstall
 ```
 

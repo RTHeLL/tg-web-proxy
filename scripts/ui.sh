@@ -19,7 +19,8 @@ ui_out() {
 	fi
 }
 
-if ui_is_tty; then
+# цвета, если есть настоящий терминал (в т.ч. при bash <(curl) через /dev/tty)
+if ui_is_tty || ui_can_prompt; then
 	UI_RESET=$'\033[0m'
 	UI_BOLD=$'\033[1m'
 	UI_DIM=$'\033[2m'
