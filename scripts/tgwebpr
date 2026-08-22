@@ -165,15 +165,31 @@ cmd_status() {
 	fi
 
 	ready='нет'
-	if timeout 5 docker compose -f "$INSTALL_DIR/docker-compose.yml" --env-file "$INSTALL_DIR/.env" \
-		exec -T tproxy curl --fail --silent --max-time 3 http://127.0.0.1:8081/readyz \
-		>/dev/null 2>&1; then
+	if timeout 5 docker exec tg-web-proxy curl --fail --silent --max-time 3 \
+		http://127.0.0.1:8081/readyz >/dev/null 2>&1; then
 		ready='да'
 	fi
 
 	https='нет'
-	if timeout 8 curl --fail --silent --max-time 5 "https://${TPROXY_HOSTNAME}/" >/dev/null 2>&1; then
+	# hairpin NAT на VPS часто ломает curl к своему публичному IP — проверяем через loopback
+	if timeout 8 curl --fail --silent --max-time 5 \
+		--resolve "${TPROXY_HOSTNAME}:443:127.0.0.1" \
+		"https://${TPROXY_HOSTNAME}/" >/dev/null 2>&1; then
 		https='да'
+	fi
+
+	backend='?'
+	if metrics="$(timeout 5 docker exec tg-web-proxy curl --silent --max-time 3 \
+		http://127.0.0.1:8081/metrics 2>/dev/null)"; then
+		failures="$(printf '%s\n' "$metrics" | awk -F' ' '/^tproxy_backend_dial_failures_total /{print $2; exit}')"
+		sessions="$(printf '%s\n' "$metrics" | awk -F' ' '/^tproxy_sessions_live /{print $2; exit}')"
+		if [[ -n "${failures:-}" && "${failures}" != "0" ]]; then
+			backend="dial_failures=${failures}"
+		elif [[ -n "${sessions:-}" && "${sessions}" != "0" ]]; then
+			backend="sessions=${sessions}"
+		else
+			backend='ok'
+		fi
 	fi
 
 	carrier="${CARRIER_MODE:-?}"
@@ -188,11 +204,15 @@ cmd_status() {
 		"Carrier  : ${carrier}${carrier_hint}" \
 		"Контейнер: ${container}" \
 		"Ready    : ${ready} (relay + MTProxy :2398)" \
-		"HTTPS    : ${https}"
+		"HTTPS    : ${https} (loopback)" \
+		"Backend  : ${backend}"
 
 	if [[ "$ready" == "да" && "$https" == "да" ]]; then
 		ui_info 'если TG «подключён», но чаты пустые — tgwebpr carrier → websocket'
 		ui_info 'вкладка браузера из TG — запасной путь, не основной режим'
+		if [[ "${backend:-}" == dial_failures=* && "${backend#dial_failures=}" != "0" ]]; then
+			ui_warn 'MTProxy не достучался до DC Telegram — проверьте исходящий трафик VPS'
+		fi
 	fi
 
 	ui_out '\n'
