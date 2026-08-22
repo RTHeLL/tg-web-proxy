@@ -35,7 +35,7 @@ RUN curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
 	&& tar -C /usr/local/bin -xzf /tmp/caddy.tar.gz caddy \
 	&& rm -f /tmp/caddy.tar.gz
 RUN curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
-		--output /tmp/telemt.tar.gz "https://github.com/telemt/telemt/releases/download/v${TELEMT_VERSION}/telemt-x86_64-linux-gnu.tar.gz" \
+		--output /tmp/telemt.tar.gz "https://github.com/telemt/telemt/releases/download/${TELEMT_VERSION}/telemt-x86_64-linux-gnu.tar.gz" \
 	&& echo "${TELEMT_SHA256}  /tmp/telemt.tar.gz" | sha256sum -c \
 	&& tar -C /usr/local/bin -xzf /tmp/telemt.tar.gz telemt \
 	&& rm -f /tmp/telemt.tar.gz \
