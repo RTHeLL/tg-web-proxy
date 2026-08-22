@@ -1,0 +1,206 @@
+#!/usr/bin/env bash
+# Terminal UI helpers for tg-web-proxy installers.
+# Source from install scripts; safe when stdout is not a TTY.
+
+ui_is_tty() {
+	[[ -t 1 ]] && [[ -t 0 ]]
+}
+
+if ui_is_tty; then
+	UI_RESET=$'\033[0m'
+	UI_BOLD=$'\033[1m'
+	UI_DIM=$'\033[2m'
+	UI_CYAN=$'\033[36m'
+	UI_GREEN=$'\033[32m'
+	UI_YELLOW=$'\033[33m'
+	UI_RED=$'\033[31m'
+	UI_BLUE=$'\033[34m'
+	UI_MAG=$'\033[35m'
+else
+	UI_RESET='' UI_BOLD='' UI_DIM='' UI_CYAN='' UI_GREEN=''
+	UI_YELLOW='' UI_RED='' UI_BLUE='' UI_MAG=''
+fi
+
+ui_banner() {
+	cat <<EOF
+${UI_CYAN}${UI_BOLD}
+  ┌──────────────────────────────────────────────┐
+  │           tg-web-proxy installer             │
+  │     Telegram Desktop · WEB · Docker          │
+  └──────────────────────────────────────────────┘
+${UI_RESET}${UI_DIM}  github.com/RTHeLL/tg-web-proxy${UI_RESET}
+EOF
+}
+
+ui_line() {
+	printf '%s\n' "${UI_DIM}────────────────────────────────────────────────${UI_RESET}"
+}
+
+ui_step() {
+	printf '\n%s[%s/%s]%s %s\n' "$UI_BLUE" "$1" "$2" "$UI_RESET" "$3"
+}
+
+ui_ok() {
+	printf '  %s✓%s %s\n' "$UI_GREEN" "$UI_RESET" "$1"
+}
+
+ui_warn() {
+	printf '  %s!%s %s\n' "$UI_YELLOW" "$UI_RESET" "$1"
+}
+
+ui_fail() {
+	printf '  %s✗%s %s\n' "$UI_RED" "$UI_RESET" "$1" >&2
+}
+
+ui_info() {
+	printf '  %s·%s %s\n' "$UI_DIM" "$UI_RESET" "$1"
+}
+
+ui_box() {
+	title="$1"
+	shift
+	ui_line
+	printf '%s%s%s\n' "$UI_BOLD" "$title" "$UI_RESET"
+	while [[ $# -gt 0 ]]; do
+		printf '  %s\n' "$1"
+		shift
+	done
+	ui_line
+}
+
+ui_spin() {
+	msg="$1"
+	if ! ui_is_tty; then
+		printf '  … %s\n' "$msg"
+		return 0
+	fi
+	printf '  %s…%s %s' "$UI_DIM" "$UI_RESET" "$msg"
+	(
+		chars='|/-\'
+		i=0
+		while kill -0 "$PPID" 2>/dev/null; do
+			c="${chars:i%${#chars}:1}"
+			printf '\r  %s%s%s %s' "$UI_DIM" "$c" "$UI_RESET" "$msg"
+			i=$((i + 1))
+			sleep 0.12
+		done
+	) &
+	UI_SPIN_PID=$!
+}
+
+ui_spin_done() {
+	if [[ -n "${UI_SPIN_PID:-}" ]]; then
+		kill "$UI_SPIN_PID" 2>/dev/null || true
+		wait "$UI_SPIN_PID" 2>/dev/null || true
+		unset UI_SPIN_PID
+	fi
+	if ui_is_tty; then
+		printf '\r\033[K'
+	fi
+}
+
+ui_ask() {
+	prompt="$1"
+	default="${2:-}"
+	if [[ -n "$default" ]]; then
+		printf '%s%s%s [%s]: ' "$UI_BOLD" "$prompt" "$UI_RESET" "$default"
+	else
+		printf '%s%s%s: ' "$UI_BOLD" "$prompt" "$UI_RESET"
+	fi
+	IFS= read -r reply || reply=""
+	if [[ -z "$reply" && -n "$default" ]]; then
+		reply="$default"
+	fi
+	printf '%s' "$reply"
+}
+
+ui_ask_yes() {
+	prompt="$1"
+	default="${2:-y}"
+	if [[ "$default" == "y" ]]; then
+		hint='Y/n'
+	else
+		hint='y/N'
+	fi
+	printf '%s%s%s (%s): ' "$UI_BOLD" "$prompt" "$UI_RESET" "$hint"
+	IFS= read -r reply || reply=""
+	reply="$(printf '%s' "$reply" | tr '[:upper:]' '[:lower:]')"
+	if [[ -z "$reply" ]]; then
+		reply="$default"
+	fi
+	[[ "$reply" == "y" || "$reply" == "yes" || "$reply" == "д" || "$reply" == "да" ]]
+}
+
+ui_pick_site() {
+	root="$1"
+	selected="${2:-}"
+
+	if [[ -n "$selected" ]]; then
+		printf '%s' "$selected"
+		return 0
+	fi
+
+	# порядок и подписи фиксированы — меню не зависит от того, клонирован ли уже репо
+	site_ids=(northwind-field studio-garden atlas-books harbor-dental craft-roastery pixel-repair)
+	site_labels=(
+		'Northwind Field Notes — полевые заметки'
+		'Studio Garden — ландшафт'
+		'Atlas Books — книжный'
+		'Harbor Dental — стоматология'
+		'Craft Roastery — кофе'
+		'Pixel Repair — ремонт техники'
+	)
+
+	ui_line
+	printf '%sВыбор сайта-камуфляжа%s\n' "$UI_BOLD" "$UI_RESET"
+	ui_info 'Снаружи будет обычный статический сайт. Тексты потом можно переписать.'
+	printf '\n'
+
+	i=1
+	for label in "${site_labels[@]}"; do
+		id="${site_ids[$((i - 1))]}"
+		if [[ -n "$root" && -f "$root/web/sites/$id/index.html" ]]; then
+			mark=' '
+		elif [[ -n "$root" && -d "$root/web/sites" ]]; then
+			mark='?'
+		else
+			mark=' '
+		fi
+		printf '  %s%2d)%s  %s  %s(%s)%s\n' "$UI_CYAN" "$i" "$UI_RESET" "$label" "$UI_DIM" "$id" "$UI_RESET"
+		i=$((i + 1))
+	done
+
+	printf '\n'
+	while true; do
+		choice="$(ui_ask 'Номер или id' '2')"
+		if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#site_ids[@]} )); then
+			printf '%s' "${site_ids[$((choice - 1))]}"
+			return 0
+		fi
+		for id in "${site_ids[@]}"; do
+			if [[ "$choice" == "$id" ]]; then
+				printf '%s' "$id"
+				return 0
+			fi
+		done
+		ui_warn 'выбери номер из списка или id папки'
+	done
+}
+
+ui_credentials_box() {
+	hostname="$1"
+	secret="$2"
+	site="$3"
+	install_dir="${4:-/opt/tg-web-proxy}"
+
+	ui_box 'Готово — данные для Telegram Desktop' \
+		"Hostname : $hostname" \
+		"Key      : $secret" \
+		"Site     : $site" \
+		"" \
+		"Desktop → Настройки → Тип соединения → WEB" \
+		"tg://webproxy?server=${hostname}&secret=${secret}" \
+		"" \
+		"Проверка: curl -fsS https://${hostname}/" \
+		"Логи:     cd ${install_dir} && docker compose logs -f tproxy"
+}

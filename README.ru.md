@@ -1,55 +1,45 @@
 # tg-web-proxy
 
-Telegram **WEB Proxy** для Desktop (≥ 7.1.1): hostname + ключ, трафик через HTTPS/WebView.
+Серверная часть для **WEB**-прокси в Telegram Desktop (7.1.1+). В клиенте два поля: hostname и ключ. Трафик идёт через WebView как обычный HTTPS; снаружи — статический сайт.
 
-Основано на [telegramdesktop/tproxy-server](https://github.com/telegramdesktop/tproxy-server).
+Взято за основу [tproxy-server](https://github.com/telegramdesktop/tproxy-server) от john-preston, поверх — docker-обвязка и несколько сайтов-камуфляжей.
 
-## Установка (одна команда на VPS)
+## Поставить на VPS
 
-DNS: `A`-запись hostname → IP сервера. Открыты **TCP 80/443**. Root.
+DNS: `A` на IP сервера. Порты 80/443 свободны. Запуск от root.
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/install.sh)
+```
+
+Без флагов скрипт сам спросит hostname, email и какой сайт показывать. Можно и так:
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/install.sh) \
   --hostname proxy.example.com \
   --email you@example.com \
-  --site craft-roastery
+  --site craft-roastery \
+  -y
 ```
 
-Скрипт сам поставит Docker (если нет), клонирует репозиторий в `/opt/tg-web-proxy`,
-соберёт контейнер и выведет **hostname + secret** для Telegram Desktop.
+Ставит docker (если нет), клонирует в `/opt/tg-web-proxy`, собирает контейнер. В конце печатает hostname и secret.
 
-### Камуфляжные сайты (`--site`)
+### Сайты (`--site`)
 
-| ID | Тема |
-|---|---|
-| `northwind-field` | полевые заметки |
-| `studio-garden` | ландшафтная студия *(по умолчанию)* |
-| `atlas-books` | книжный |
-| `harbor-dental` | стоматология |
-| `craft-roastery` | обжарка кофе |
-| `pixel-repair` | ремонт техники |
+`northwind-field` · `studio-garden` · `atlas-books` · `harbor-dental` · `craft-roastery` · `pixel-repair`
 
-### Флаги
+По умолчанию в меню — `studio-garden`. Тексты лучше потом заменить на свои.
 
-| Флаг | По умолчанию | Назначение |
-|---|---|---|
-| `--hostname` | — | публичный DNS (обязателен) |
-| `--email` | — | email для Let's Encrypt (обязателен) |
-| `--site` | `studio-garden` | вариант сайта-камуфляжа |
-| `--secret` | случайный | ключ WEB proxy (32 hex, опционально `dd`) |
-
-### После установки
+### Если что-то пошло не так
 
 ```bash
-curl --fail https://proxy.example.com/
-docker compose -f /opt/tg-web-proxy/docker-compose.yml ps
-docker compose -f /opt/tg-web-proxy/docker-compose.yml logs -f tproxy
+curl -fsS https://proxy.example.com/
+cd /opt/tg-web-proxy && docker compose ps
+cd /opt/tg-web-proxy && docker compose logs -f tproxy
 ```
 
-Telegram Desktop → **WEB** proxy → hostname + key из вывода установщика.
-
-Share link (PoC): `tg://webproxy?server=HOST&secret=SECRET`
+В Desktop: тип **WEB**, hostname и key из вывода установщика.
 
 ---
 
-Подробности: **[DEPLOY.ru.md](DEPLOY.ru.md)** · upstream **[README.md](README.md)**
+Ещё: [DEPLOY.ru.md](DEPLOY.ru.md) · upstream [README.md](README.md)

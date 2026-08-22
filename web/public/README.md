@@ -1,22 +1,11 @@
-# Public site packages
-
-Static camouflage sites live under [`../sites/`](../sites/). Each subdirectory is a self-contained package for `--site-dir` / Docker `--site`.
-
-List available variants:
+Статические сайты лежат в [`../sites/`](../sites/).
 
 ```bash
-./scripts/list-sites.sh
+bash scripts/list-sites.sh
 ```
 
-Example deploy path:
+Пример для `deploy/install.sh`:
 
 ```bash
-sudo ./deploy/install.sh \
-  --hostname proxy.example.com \
-  --email operator@example.com \
-  --site-dir "$PWD/web/sites/northwind-field"
+--site-dir "$PWD/web/sites/studio-garden"
 ```
-
-See [`PUBLIC_SITE.md`](../../PUBLIC_SITE.md) for the full site package contract.
-
-Before production, replace copy and visuals with operator-owned unique content.

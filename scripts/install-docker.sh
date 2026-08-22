@@ -1,18 +1,10 @@
 #!/usr/bin/env bash
-# Full automatic WEB Proxy deployment via Docker Compose.
-#
-# Prefer the one-liner installer on the VPS:
-#   bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/install.sh) \
-#     --hostname proxy.example.com --email you@example.com --site craft-roastery
-#
-# Or run locally from a git checkout:
-#   bash scripts/install-docker.sh --local \
-#     --hostname proxy.example.com --email you@example.com --site atlas-books
-#
-# List sites: bash scripts/list-sites.sh
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/ui.sh
+source "$root/scripts/ui.sh"
+
 mode=""
 ssh_target=""
 hostname=""
@@ -21,17 +13,12 @@ site=""
 secret=""
 remote_dir="/opt/tg-web-proxy"
 dry_run=0
+quiet=0
 
 usage() {
 	cat <<'EOF'
-usage:
-  install-docker.sh --ssh user@host --hostname FQDN --email addr --site NAME [--secret HEX] [--remote-dir PATH]
-  install-docker.sh --local  --hostname FQDN --email addr --site NAME [--secret HEX]
-
-options:
-  --secret       32 hex chars, optional dd prefix (generated if omitted)
-  --remote-dir   install path on VPS (default: /opt/tg-web-proxy)
-  --dry-run      print actions without executing remote/local docker steps
+install-docker.sh --local --hostname FQDN --email addr --site NAME [--secret HEX]
+install-docker.sh --ssh user@host --hostname FQDN --email addr --site NAME
 EOF
 }
 
@@ -45,6 +32,7 @@ while [[ $# -gt 0 ]]; do
 		--secret) secret="${2:-}"; shift 2 ;;
 		--remote-dir) remote_dir="${2:-}"; shift 2 ;;
 		--dry-run) dry_run=1; shift ;;
+		-q|--quiet) quiet=1; shift ;;
 		-h|--help) usage; exit 0 ;;
 		*) usage; exit 2 ;;
 	esac
@@ -56,26 +44,28 @@ if [[ -z "$mode" || -z "$hostname" || -z "$email" || -z "$site" ]]; then
 fi
 
 if [[ ! "$hostname" =~ ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$ ]] || [[ "$hostname" != *.* ]]; then
-	echo "hostname must be lowercase ASCII DNS" >&2
+	ui_fail 'hostname: только fqdn маленькими буквами'
 	exit 2
 fi
 if [[ ! "$email" =~ ^[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
-	echo "invalid email" >&2
+	ui_fail 'кривой email'
 	exit 2
 fi
 site_dir="$root/web/sites/$site"
 if [[ ! -f "$site_dir/index.html" ]]; then
-	echo "unknown site variant: $site" >&2
-	echo "available:" >&2
+	ui_fail "нет такого сайта: $site"
 	bash "$root/scripts/list-sites.sh" >&2
 	exit 2
 fi
 
 if [[ -z "$secret" ]]; then
+	ui_spin 'генерирую ключ'
 	secret="$(bash "$root/scripts/gen-secret.sh")"
+	ui_spin_done
+	ui_ok "ключ: ${secret:0:8}…${secret: -4}"
 fi
 if [[ ! "$secret" =~ ^([0-9a-f]{32}|dd[0-9a-f]{32})$ ]]; then
-	echo "secret must be 32 lowercase hex chars, optionally prefixed with dd" >&2
+	ui_fail 'secret: 32 hex, dd в начале — по желанию'
 	exit 2
 fi
 
@@ -101,11 +91,11 @@ EOF
 
 check_docker() {
 	if ! command -v docker >/dev/null 2>&1; then
-		echo "docker is not installed" >&2
+		ui_fail 'docker не установлен'
 		return 1
 	fi
 	if ! docker compose version >/dev/null 2>&1; then
-		echo "docker compose plugin is not available" >&2
+		ui_fail 'нет docker compose plugin'
 		return 1
 	fi
 }
@@ -113,47 +103,40 @@ check_docker() {
 deploy_compose() {
 	workdir="$1"
 	cd "$workdir"
+	ui_step 5 5 'docker compose'
+	ui_spin 'собираю образ (первый раз может занять несколько минут)'
 	docker compose --env-file .env build
+	ui_spin_done
+	ui_ok 'образ собран'
+	ui_spin 'поднимаю контейнер'
 	docker compose --env-file .env up -d
+	ui_spin_done
+	ui_spin 'жду readyz'
 	for attempt in $(seq 1 60); do
 		if docker compose exec -T tproxy curl --fail --silent http://127.0.0.1:8081/readyz >/dev/null 2>&1; then
+			ui_spin_done
+			ui_ok 'релей отвечает'
 			return 0
 		fi
 		sleep 2
 	done
-	echo "stack did not become ready in time" >&2
+	ui_spin_done
+	ui_fail 'таймаут — смотри docker compose logs tproxy'
 	docker compose logs --tail=80 tproxy || true
 	return 1
 }
 
 print_summary() {
-	cat <<EOF
-
-Deployment complete.
-
-  Hostname : $hostname
-  Secret   : $secret
-  Site     : $site
-
-Telegram Desktop → WEB proxy:
-  Hostname : $hostname
-  Key      : $secret
-
-Share link (PoC):
-  tg://webproxy?server=$hostname&secret=$secret
-
-Checks:
-  curl --fail https://$hostname/
-  docker compose ps
-  docker compose logs -f tproxy
-
-EOF
+	ui_credentials_box "$hostname" "$secret" "$site" "$root"
 }
 
 if [[ "$mode" == "local" ]]; then
+	if [[ "$quiet" -eq 0 ]]; then
+		ui_info "сайт: $site → runtime/site/"
+	fi
 	prepare_runtime "$root"
 	if [[ "$dry_run" -eq 1 ]]; then
-		echo "[dry-run] prepared $root/.env and runtime/site ($site)"
+		ui_box 'dry-run' "готово $root/.env"
 		exit 0
 	fi
 	check_docker
@@ -163,7 +146,7 @@ if [[ "$mode" == "local" ]]; then
 fi
 
 if [[ "$dry_run" -eq 1 ]]; then
-	echo "[dry-run] would rsync to $ssh_target:$remote_dir and run docker compose"
+	ui_box 'dry-run' "rsync → $ssh_target:$remote_dir"
 	exit 0
 fi
 
@@ -181,18 +164,7 @@ rsync -az --delete \
 	"$tmp/project/" "$ssh_target:$remote_dir/"
 
 if ! ssh "$ssh_target" "command -v docker >/dev/null && docker compose version >/dev/null"; then
-	cat <<EOF >&2
-Docker is not available on $ssh_target.
-
-On the VPS you still need (one-time, on the host — not inside this repo):
-  - Docker Engine + Compose plugin
-  - open TCP 80/443
-  - DNS A record: $hostname -> server IP (no CDN)
-
-After installing Docker, re-run the same install-docker.sh command.
-Optional helper (run manually on VPS if you agree):
-  curl -fsSL https://get.docker.com | sh
-EOF
+	ui_fail "на $ssh_target нет docker compose"
 	exit 1
 fi
 
@@ -207,7 +179,7 @@ for attempt in $(seq 1 60); do
 	sleep 2
 done
 if [[ "$ready" -ne 1 ]]; then
-	echo "remote stack did not become ready; inspect: ssh $ssh_target 'cd $remote_dir && docker compose logs tproxy'" >&2
+	ui_fail "не дождался readyz на $ssh_target"
 	exit 1
 fi
 

@@ -1,79 +1,42 @@
-# Деплой Telegram WEB Proxy
+# Деплой
 
-## Установка одной командой
-
-На VPS под **root** (или `sudo bash`):
+## Быстрый путь
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/install.sh) \
-  --hostname proxy.example.com \
-  --email you@example.com \
-  --site craft-roastery
+bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/install.sh)
 ```
 
-**До запуска:** DNS `A` hostname → IP сервера (без CDN), открыты TCP **80/443**.
+Интерактивно спросит hostname, email, сайт. Флаги `-y`, `--hostname`, `--email`, `--site` — если не хочешь диалог.
 
-Скрипт:
-1. ставит Docker Engine + Compose (Debian/Ubuntu), если их нет;
-2. клонирует/обновляет `/opt/tg-web-proxy`;
-3. собирает контейнер (Caddy + tproxy-server + MTProxy);
-4. печатает hostname и secret для Telegram Desktop.
+Перед запуском: `A`-запись на IP, 80/443 открыты, root.
 
-Повторный запуск обновляет код из git и пересобирает стек.
+Повторный запуск тянет свежий `main` из git и пересобирает контейнер.
 
-### Сайты-камуфляж
+## Сайты
 
-```text
-northwind-field  studio-garden  atlas-books
-harbor-dental    craft-roastery pixel-repair
-```
+Папки в `web/sites/` — статика для камуфляжа. Id совпадает с `--site`:
 
-По умолчанию: `studio-garden`.
+`northwind-field` `studio-garden` `atlas-books` `harbor-dental` `craft-roastery` `pixel-repair`
 
-### Проверка
+## Проверка
 
 ```bash
-curl --fail https://proxy.example.com/
+curl -fsS https://YOUR.HOST/
 cd /opt/tg-web-proxy && docker compose ps
 cd /opt/tg-web-proxy && docker compose logs --tail=50 tproxy
 ```
 
-### Telegram Desktop
+## Permission denied на ./scripts/...
 
-Тип **WEB** → hostname + ключ из вывода установщика.
-
----
-
-## Если «Permission denied» на скрипты
-
-После `git clone` на Windows-битые права не мешают — используйте установщик через `bash`:
+Git с Windows часто не даёт +x. Обход:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/install.sh) ...
-```
-
-Или явно:
-
-```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/install.sh)
+# или
 bash /opt/tg-web-proxy/scripts/list-sites.sh
-bash /opt/tg-web-proxy/scripts/install-docker.sh --local --hostname ... --email ... --site ...
 ```
 
----
-
-## Как это устроено
-
-```text
-Telegram Desktop → WebView (HTTPS) → Caddy → tproxy-server → MTProxy
-```
-
-Снаружи — обычный сайт; внутри контейнера релей разбирает мультиплекс.
-
-Это **не** `tg-ws-proxy`. Протокол: [`PROTOCOL.md`](PROTOCOL.md).
-
----
-
-## Альтернатива: systemd без Docker
+## Без Docker
 
 ```bash
 git clone https://github.com/RTHeLL/tg-web-proxy.git /opt/tg-web-proxy
@@ -84,13 +47,11 @@ sudo bash deploy/install.sh \
   --site-dir "$PWD/web/sites/studio-garden"
 ```
 
----
+## Частые косяки
 
-## Типичные ошибки
+- **80/443 заняты** — убери nginx/caddy на хосте
+- **нет сертификата** — A напрямую на сервер, без Cloudflare proxy
+- **Connecting в TG** — hostname/key должны совпадать с `.env`
+- **Permission denied** — запускай через `bash`, не `./`
 
-| Симптом | Решение |
-|---|---|
-| `Permission denied` на `./scripts/...` | запускайте через `bash script.sh` или one-liner выше |
-| порт 80/443 занят | освободите (nginx/apache/caddy на хосте) |
-| сертификат не выдаётся | A-запись напрямую на IP, без Cloudflare proxy |
-| Connecting в Telegram | hostname/secret должны совпадать с `.env` |
+Схема: Desktop → HTTPS → Caddy → tproxy-server → MTProxy. Не путать с `tg-ws-proxy`. Wire-формат — `PROTOCOL.md`.
