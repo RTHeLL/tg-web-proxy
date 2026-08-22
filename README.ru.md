@@ -1,35 +1,55 @@
-# tg-test-web-proxy
+# tg-web-proxy
 
-Рабочая копия серверной части **Telegram WEB Proxy**
-([telegramdesktop/tproxy-server](https://github.com/telegramdesktop/tproxy-server)).
+Telegram **WEB Proxy** для Desktop (≥ 7.1.1): hostname + ключ, трафик через HTTPS/WebView.
 
-Клиент: Telegram Desktop **≥ 7.1.1** (тип **WEB**: hostname + ключ).
+Основано на [telegramdesktop/tproxy-server](https://github.com/telegramdesktop/tproxy-server).
 
-## Быстрый старт (Docker)
+## Установка (одна команда на VPS)
+
+DNS: `A`-запись hostname → IP сервера. Открыты **TCP 80/443**. Root.
 
 ```bash
-./scripts/list-sites.sh
-
-./scripts/install-docker.sh \
-  --ssh user@YOUR_SERVER \
+bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/install.sh) \
   --hostname proxy.example.com \
   --email you@example.com \
   --site craft-roastery
 ```
 
-На VPS заранее: Docker, открытые 80/443, DNS A на hostname.
+Скрипт сам поставит Docker (если нет), клонирует репозиторий в `/opt/tg-web-proxy`,
+соберёт контейнер и выведет **hostname + secret** для Telegram Desktop.
 
-Полная инструкция: **[DEPLOY.ru.md](DEPLOY.ru.md)**
+### Камуфляжные сайты (`--site`)
 
-## Камуфляжные сайты
+| ID | Тема |
+|---|---|
+| `northwind-field` | полевые заметки |
+| `studio-garden` | ландшафтная студия *(по умолчанию)* |
+| `atlas-books` | книжный |
+| `harbor-dental` | стоматология |
+| `craft-roastery` | обжарка кофе |
+| `pixel-repair` | ремонт техники |
 
-6 вариантов в `web/sites/` — `northwind-field`, `studio-garden`, `atlas-books`,
-`harbor-dental`, `craft-roastery`, `pixel-repair`.
+### Флаги
 
-## Локальные дополнения
+| Флаг | По умолчанию | Назначение |
+|---|---|---|
+| `--hostname` | — | публичный DNS (обязателен) |
+| `--email` | — | email для Let's Encrypt (обязателен) |
+| `--site` | `studio-garden` | вариант сайта-камуфляжа |
+| `--secret` | случайный | ключ WEB proxy (32 hex, опционально `dd`) |
 
-- Docker-стек и `scripts/install-docker.sh`
-- Каталог сайтов `web/sites/`
-- `DEPLOY.ru.md`, `scripts/gen-secret.sh`, `scripts/bridge-capability.sh`
+### После установки
 
-Upstream: [`UPSTREAM.md`](UPSTREAM.md)
+```bash
+curl --fail https://proxy.example.com/
+docker compose -f /opt/tg-web-proxy/docker-compose.yml ps
+docker compose -f /opt/tg-web-proxy/docker-compose.yml logs -f tproxy
+```
+
+Telegram Desktop → **WEB** proxy → hostname + key из вывода установщика.
+
+Share link (PoC): `tg://webproxy?server=HOST&secret=SECRET`
+
+---
+
+Подробности: **[DEPLOY.ru.md](DEPLOY.ru.md)** · upstream **[README.md](README.md)**

@@ -1,20 +1,15 @@
 #!/usr/bin/env bash
 # Full automatic WEB Proxy deployment via Docker Compose.
 #
-# Remote (recommended — only Docker must exist on the VPS):
-#   ./scripts/install-docker.sh \
-#     --ssh user@203.0.113.10 \
-#     --hostname proxy.example.com \
-#     --email you@example.com \
-#     --site craft-roastery
+# Prefer the one-liner installer on the VPS:
+#   bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/install.sh) \
+#     --hostname proxy.example.com --email you@example.com --site craft-roastery
 #
-# Local on the VPS itself:
-#   ./scripts/install-docker.sh --local \
-#     --hostname proxy.example.com \
-#     --email you@example.com \
-#     --site atlas-books
+# Or run locally from a git checkout:
+#   bash scripts/install-docker.sh --local \
+#     --hostname proxy.example.com --email you@example.com --site atlas-books
 #
-# List sites: ./scripts/list-sites.sh
+# List sites: bash scripts/list-sites.sh
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -72,12 +67,12 @@ site_dir="$root/web/sites/$site"
 if [[ ! -f "$site_dir/index.html" ]]; then
 	echo "unknown site variant: $site" >&2
 	echo "available:" >&2
-	"$root/scripts/list-sites.sh" >&2
+	bash "$root/scripts/list-sites.sh" >&2
 	exit 2
 fi
 
 if [[ -z "$secret" ]]; then
-	secret="$("$root/scripts/gen-secret.sh")"
+	secret="$(bash "$root/scripts/gen-secret.sh")"
 fi
 if [[ ! "$secret" =~ ^([0-9a-f]{32}|dd[0-9a-f]{32})$ ]]; then
 	echo "secret must be 32 lowercase hex chars, optionally prefixed with dd" >&2
@@ -87,7 +82,12 @@ fi
 prepare_runtime() {
 	target_root="$1"
 	mkdir -p "$target_root/runtime/site"
-	rsync -a --delete "$site_dir/" "$target_root/runtime/site/"
+	if command -v rsync >/dev/null 2>&1; then
+		rsync -a --delete "$site_dir/" "$target_root/runtime/site/"
+	else
+		find "$target_root/runtime/site" -mindepth 1 -delete 2>/dev/null || rm -rf "$target_root/runtime/site"/*
+		cp -a "$site_dir/." "$target_root/runtime/site/"
+	fi
 	cat >"$target_root/.env" <<EOF
 TPROXY_HOSTNAME=$hostname
 ACME_EMAIL=$email

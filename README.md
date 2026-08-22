@@ -1,7 +1,7 @@
 # tproxy-server
 
 > **Русский быстрый старт:** [README.ru.md](README.ru.md) · [DEPLOY.ru.md](DEPLOY.ru.md)  
-> **Docker-деплой:** `./scripts/install-docker.sh --ssh user@host ...`  
+> **One-liner:** `bash <(curl -fsSL https://raw.githubusercontent.com/RTHeLL/tg-web-proxy/main/install.sh) --hostname ... --email ...`  
 > Локальные дополнения: `web/sites/`, `docker/`, см. [UPSTREAM.md](UPSTREAM.md).
 
 `tproxy-server` is the hosted half of a proof-of-concept WEB proxy type for
