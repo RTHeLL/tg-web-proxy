@@ -112,7 +112,7 @@ set_carrier_mode() {
 		printf 'CARRIER_MODE=%s\n' "$mode" >>"$INSTALL_DIR/.env"
 	fi
 	chmod 0600 "$INSTALL_DIR/.env"
-	compose up -d
+	compose_reload_env
 	ui_ok "carrier: $mode"
 }
 
@@ -144,6 +144,11 @@ compose() {
 		cd "$INSTALL_DIR"
 		docker compose --env-file .env "$@"
 	)
+}
+
+# .env changes are not always picked up by plain `up -d` — recreate the container.
+compose_reload_env() {
+	compose up -d --force-recreate
 }
 
 pause_menu() {
@@ -213,6 +218,14 @@ cmd_status() {
 
 	carrier="${CARRIER_MODE:-?}"
 	backend_engine="${BACKEND:-telemt}"
+	ad_env="${MTPROXY_AD_TAG:-—}"
+	ad_telemt='—'
+	me_telemt='?'
+	if telemt_cfg="$(timeout 5 docker exec tg-web-proxy cat /etc/telemt/telemt.toml 2>/dev/null)"; then
+		ad_telemt="$(printf '%s\n' "$telemt_cfg" | awk -F'"' '/^ad_tag = /{print $2; exit}')"
+		[[ -z "$ad_telemt" ]] && ad_telemt='—'
+		me_telemt="$(printf '%s\n' "$telemt_cfg" | awk -F' = ' '/^use_middle_proxy = /{print $2; exit}')"
+	fi
 	carrier_hint=''
 	if [[ "${carrier}" == "https" ]]; then
 		carrier_hint=' · для Desktop лучше: tgwebpr carrier'
@@ -223,6 +236,7 @@ cmd_status() {
 		"Site     : ${SITE_VARIANT:-?}" \
 		"Carrier  : ${carrier}${carrier_hint}" \
 		"Engine   : ${backend_engine} → :2398" \
+		"Promo    : .env=${ad_env} · telemt=${ad_telemt} · ME=${me_telemt}" \
 		"Контейнер: ${container}" \
 		"Ready    : ${ready}" \
 		"HTTPS    : ${https}" \
@@ -243,6 +257,13 @@ cmd_status() {
 		if [[ -n "${bytes_up:-}" && -n "${bytes_down:-}" && "${bytes_up}" -gt 10000 && "${bytes_down}" -lt 10000 ]]; then
 			ui_warn 'мало downlink — backend не отдаёт ответы из Telegram'
 			ui_info 'попробуйте BACKEND=telemt в .env и tgwebpr update'
+		fi
+		if [[ "$ad_env" == "—" ]]; then
+			ui_warn 'ad tag не задан в .env — promo не работает (tgwebpr proxy → пункт 4)'
+		elif [[ "$ad_telemt" == "—" || "$ad_env" != "$ad_telemt" ]]; then
+			ui_warn 'ad tag в .env не попал в telemt — tgwebpr restart или tgwebpr proxy → 4'
+		elif [[ "$me_telemt" != "true" ]]; then
+			ui_warn 'ME pool выключен — для promo нужен use_middle_proxy=true'
 		fi
 	fi
 
@@ -434,7 +455,7 @@ set_backend_engine() {
 		*) ui_fail "backend: telemt или mtproxy"; return 1 ;;
 	esac
 	set_env_var BACKEND "$engine"
-	compose up -d
+	compose_reload_env
 	ui_ok "backend: $engine"
 }
 
@@ -445,7 +466,7 @@ set_middle_proxy() {
 		*) ui_fail "нужно true или false"; return 1 ;;
 	esac
 	set_env_var TELEMT_MIDDLE_PROXY "$val"
-	compose up -d
+	compose_reload_env
 	ui_ok "TELEMT_MIDDLE_PROXY=$val"
 }
 
@@ -453,7 +474,7 @@ set_ad_tag() {
 	local tag="${1,,}"
 	if [[ -z "$tag" ]]; then
 		clear_env_var MTPROXY_AD_TAG
-		compose up -d
+		compose_reload_env
 		ui_ok 'ad tag удалён'
 		return 0
 	fi
@@ -463,7 +484,7 @@ set_ad_tag() {
 	fi
 	set_env_var MTPROXY_AD_TAG "$tag"
 	set_env_var TELEMT_MIDDLE_PROXY true
-	compose up -d
+	compose_reload_env
 	ui_ok 'ad tag сохранён (ME pool включён — нужен для promo в telemt)'
 }
 
