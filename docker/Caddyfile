@@ -11,7 +11,8 @@
 }
 
 {$TPROXY_HOSTNAME} {
-	encode zstd gzip
+	@site not path /api/*
+	encode @site zstd gzip
 	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
 	reverse_proxy 127.0.0.1:8080 {
 		transport http {

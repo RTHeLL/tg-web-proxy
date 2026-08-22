@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Atlas Books">
-  <rect width="64" height="64" rx="6" fill="#7a3b3b"/>
-  <rect x="16" y="14" width="32" height="38" rx="2" fill="#f7f0e6"/>
-  <path d="M32 14 L32 52" stroke="#c4a574" stroke-width="1.5"/>
-  <path d="M22 24 H42 M22 32 H38 M22 40 H40" stroke="#dccbb8" stroke-width="2" stroke-linecap="round"/>
+  <rect width="64" height="64" rx="6" fill="#14110f"/>
+  <rect x="14" y="10" width="10" height="44" rx="1" fill="#6b3a3a"/>
+  <rect x="26" y="10" width="10" height="44" rx="1" fill="#d4af6a"/>
+  <rect x="38" y="10" width="10" height="44" rx="1" fill="#3d4a52"/>
+  <path d="M19 22 H39 M19 32 H35 M19 42 H37" stroke="#14110f" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
 </svg>

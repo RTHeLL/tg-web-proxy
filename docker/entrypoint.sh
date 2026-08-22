@@ -18,6 +18,9 @@ require_env TPROXY_HOSTNAME
 require_env ACME_EMAIL
 require_env TPROXY_SECRET
 
+: "${CARRIER_MODE:=websocket}"
+export CARRIER_MODE
+
 mkdir -p /etc/mtproxy /etc/tproxy-server /etc/caddy /srv/tproxy-site
 
 if [ ! -f /etc/mtproxy/proxy-secret ]; then
@@ -43,7 +46,7 @@ export XDG_DATA_HOME=/data/caddy
 export XDG_CONFIG_HOME=/data/caddy
 envsubst '${TPROXY_HOSTNAME} ${TPROXY_SECRET}' \
 	< /etc/tproxy-server/config.template.json > /etc/tproxy-server/config.json
-envsubst '${TPROXY_SECRET}' \
+envsubst '${TPROXY_SECRET} ${CARRIER_MODE}' \
 	< /etc/tproxy-server/profiles.template.json > /etc/tproxy-server/profiles.json
 chmod 0640 /etc/tproxy-server/config.json
 chmod 0400 /etc/tproxy-server/profiles.json

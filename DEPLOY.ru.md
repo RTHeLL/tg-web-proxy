@@ -18,10 +18,36 @@ tgwebpr logs         # Ctrl+C возвращает в меню
 tgwebpr restart
 tgwebpr update       # если github.com не резолвится — rebuild с диска
 tgwebpr site         # сменить шаблон 1–6
+tgwebpr carrier      # режим транспорта (см. ниже)
 tgwebpr uninstall
 ```
 
 Конфиг: `/etc/default/tgwebpr`, код: `/opt/tg-web-proxy`.
+
+## Telegram Desktop не грузит чаты
+
+Симптомы: сайт по HTTPS открывается, в TG «подключён», но сообщения не идут; при первом входе — *The built-in web transport couldn't connect*; вкладка браузера из TG показывает *Connected* и потом *Telegram Desktop disconnected*.
+
+**Что происходит:** основной путь — встроенный WebView в Telegram Desktop. Вкладка браузера — запасной вариант, когда WebView не поднялся; её закрытие/разрыв с Desktop — нормальное поведение, это не «основной режим».
+
+**Что сделать на сервере:**
+
+```bash
+sudo tgwebpr update          # подтянет CARRIER_MODE=websocket и пересоберёт образ
+# или вручную:
+sudo tgwebpr carrier         # пункт 3 — websocket
+sudo tgwebpr restart
+```
+
+Проверка: `tgwebpr status` — строка `Carrier : websocket`, `Ready : да`.
+
+В Telegram: Settings → Advanced → Proxy → удалить старый WEB proxy и добавить заново (`tgwebpr creds`). Desktop **≥ 7.1.1**.
+
+| Режим carrier | Когда |
+|---|---|
+| `websocket` | Telegram Desktop (рекомендуется) |
+| `https-lanes` | если websocket блокируется, но HTTP проходит |
+| `https` | совместимость, на Desktop часто «подключён без трафика» |
 
 ## Шаг «сайт на домене» при установке
 
@@ -44,3 +70,4 @@ sudo bash deploy/install.sh \
 | Permission denied на `./scripts` | `bash script.sh` или one-liner выше |
 | 80/443 заняты | убрать nginx/caddy на хосте |
 | Connecting в TG | `tgwebpr creds` — сверить hostname/key |
+| Подключён, но пусто | `tgwebpr carrier` → websocket + переподключить proxy в TG |

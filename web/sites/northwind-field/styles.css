@@ -1,194 +1,406 @@
 :root {
-  --ink: #1c2a24;
-  --muted: #5a6b62;
-  --paper: #f3efe6;
-  --band: #d9e2d6;
-  --accent: #2f5d4a;
-  --rule: #c4bba8;
-  --font-display: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
-  --font-body: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --ink: #2a2118;
+  --muted: #6b5d4f;
+  --paper: #f4ede3;
+  --wheat: #e8dcc8;
+  --clay: #c4795a;
+  --field: #5a7344;
+  --soil: #3d2e24;
+  --rule: #d4c4ae;
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-body: "Segoe UI", system-ui, sans-serif;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 html {
-  background:
-    radial-gradient(circle at top left, #e8f0e4 0, transparent 42%),
-    linear-gradient(180deg, #f7f3ea 0%, var(--paper) 55%, #ebe4d6 100%);
+  background: var(--paper);
   color: var(--ink);
   min-height: 100%;
 }
 
 body {
-  margin: 0 auto;
-  max-width: 56rem;
+  margin: 0;
   min-height: 100vh;
-  padding: 1.5rem 1.25rem 3rem;
   font-family: var(--font-body);
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 a {
-  color: var(--accent);
+  color: var(--field);
   text-decoration-thickness: 1px;
-  text-underline-offset: 0.18em;
+  text-underline-offset: 0.2em;
 }
 
 a:hover {
-  color: var(--ink);
+  color: var(--clay);
 }
 
 .site-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--rule);
-  margin-bottom: 2.5rem;
+  gap: 1.5rem;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 0;
 }
 
 .mark {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--ink);
   text-decoration: none;
 }
 
-nav {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.95rem;
+.mark span {
+  color: var(--clay);
 }
 
-.hero {
-  padding: 1.5rem 0 2rem;
+nav {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+}
+
+.hero-split {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 2rem;
+  align-items: end;
+  padding: 2.5rem 0 3rem;
+}
+
+.hero-copy {
+  padding-bottom: 1rem;
 }
 
 .eyebrow {
-  margin: 0 0 0.75rem;
+  margin: 0 0 1rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.75rem;
-  color: var(--muted);
+  color: var(--clay);
 }
 
 h1 {
-  margin: 0 0 1rem;
+  margin: 0 0 1.25rem;
   font-family: var(--font-display);
-  font-size: clamp(2rem, 5vw, 3.1rem);
-  line-height: 1.12;
+  font-size: clamp(2.4rem, 5.5vw, 3.6rem);
+  line-height: 1.08;
   font-weight: 700;
+  max-width: 14ch;
 }
 
 h2 {
   font-family: var(--font-display);
+  font-weight: 700;
 }
 
 .lede {
   margin: 0;
-  max-width: 38rem;
-  font-size: 1.1rem;
+  max-width: 34rem;
+  font-size: 1.12rem;
   color: var(--muted);
 }
 
-.grid {
+.photo-block {
+  aspect-ratio: 4 / 5;
+  border-radius: 2px;
+  background:
+    linear-gradient(165deg, rgba(90, 115, 68, 0.15) 0%, transparent 45%),
+    linear-gradient(220deg, #8a6b4a 0%, #5a7344 35%, #3d5230 70%, #2a2118 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.photo-block::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 28px,
+      rgba(244, 237, 227, 0.04) 28px,
+      rgba(244, 237, 227, 0.04) 29px
+    );
+}
+
+.photo-block::after {
+  content: "Plot 7 · Redfield Station";
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(244, 237, 227, 0.75);
+}
+
+.stats-band {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  background: var(--soil);
+  color: var(--wheat);
+  margin: 0 -1.5rem;
+  padding: 0 1.5rem;
+}
+
+.stat {
+  padding: 1.75rem 1.25rem;
+  border-right: 1px solid rgba(244, 237, 227, 0.12);
+}
+
+.stat:last-child {
+  border-right: none;
+}
+
+.stat-value {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-weight: 700;
+  color: var(--clay);
+  line-height: 1;
+  margin-bottom: 0.35rem;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.bento {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: minmax(8rem, auto);
   gap: 1rem;
-  margin-top: 2rem;
+  margin-top: 3rem;
 }
 
-.card {
-  background: #e7eee3;
+.bento-card {
+  background: var(--wheat);
   border: 1px solid var(--rule);
-  padding: 1.1rem 1.15rem 1.25rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
-.card h2 {
-  margin: 0 0 0.55rem;
+.bento-card h2 {
+  margin: 0 0 0.5rem;
   font-size: 1.2rem;
 }
 
-.card p {
+.bento-card p {
   margin: 0;
   color: var(--muted);
-  font-size: 0.98rem;
+  font-size: 0.95rem;
 }
 
-.band {
-  margin-top: 2.5rem;
-  background: var(--band);
-  border: 1px solid var(--rule);
-  padding: 1.5rem 1.25rem;
+.bento-card.wide {
+  grid-column: span 7;
 }
 
-.band-inner h2 {
-  margin: 0 0 0.5rem;
-  font-size: 1.25rem;
+.bento-card.tall {
+  grid-column: span 5;
+  grid-row: span 2;
+  background:
+    linear-gradient(180deg, rgba(196, 121, 90, 0.08) 0%, transparent 40%),
+    var(--wheat);
 }
 
-.band-inner p {
+.bento-card.medium {
+  grid-column: span 4;
+}
+
+.bento-card.accent {
+  grid-column: span 3;
+  background: var(--field);
+  color: var(--paper);
+  border-color: var(--field);
+}
+
+.bento-card.accent p {
+  color: rgba(244, 237, 227, 0.85);
+}
+
+.bento-card.accent h2 {
+  color: var(--paper);
+}
+
+.bento-visual {
+  grid-column: span 5;
+  min-height: 12rem;
+  border-radius: 2px;
+  background:
+    radial-gradient(ellipse at 30% 70%, rgba(196, 121, 90, 0.4) 0%, transparent 55%),
+    linear-gradient(135deg, #7a6348 0%, #5a7344 50%, #3d5230 100%);
+  position: relative;
+}
+
+.bento-visual::after {
+  content: "Soil moisture · 14 cm depth";
+  position: absolute;
+  bottom: 0.85rem;
+  right: 0.85rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(244, 237, 227, 0.7);
+}
+
+.editorial-band {
+  margin-top: 3rem;
+  display: grid;
+  grid-template-columns: 0.35fr 0.65fr;
+  gap: 2.5rem;
+  padding-top: 2.5rem;
+  border-top: 2px solid var(--soil);
+}
+
+.editorial-band h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1.2;
+}
+
+.editorial-band p {
   margin: 0;
   color: var(--muted);
-  max-width: 36rem;
+  font-size: 1.05rem;
 }
 
 .narrow {
   max-width: 40rem;
+  padding-top: 1rem;
 }
 
 .narrow h1 {
-  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  max-width: none;
 }
 
 .narrow h2 {
-  margin-top: 2rem;
-  font-size: 1.3rem;
+  margin-top: 2.25rem;
+  font-size: 1.25rem;
+  color: var(--clay);
+}
+
+.narrow p,
+.narrow li {
+  color: var(--muted);
 }
 
 .narrow ul {
   padding-left: 1.25rem;
-  color: var(--muted);
+}
+
+.narrow ul li + li {
+  margin-top: 0.35rem;
+}
+
+.error-code {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  font-weight: 700;
+  color: var(--clay);
+  line-height: 1;
+  margin: 0 0 0.5rem;
 }
 
 .site-footer {
-  margin-top: 3.5rem;
-  padding-top: 1.25rem;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 2rem;
   border-top: 1px solid var(--rule);
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
 
 .footer-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: 1.5rem;
   margin-bottom: 1.5rem;
 }
 
 .footer-title {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.4rem;
   font-family: var(--font-display);
+  font-size: 0.95rem;
   color: var(--ink);
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .footer-grid p {
   margin: 0;
-  line-height: 1.5;
 }
 
 .footer-copy {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .hero-split {
+    grid-template-columns: 1fr;
+  }
+
+  .photo-block {
+    aspect-ratio: 16 / 9;
+    max-height: 16rem;
+  }
+
+  .stats-band {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat:nth-child(2) {
+    border-right: none;
+  }
+
+  .stat:nth-child(1),
+  .stat:nth-child(2) {
+    border-bottom: 1px solid rgba(244, 237, 227, 0.12);
+  }
+
+  .bento-card.wide,
+  .bento-card.tall,
+  .bento-card.medium,
+  .bento-card.accent,
+  .bento-visual {
+    grid-column: span 12;
+    grid-row: span 1;
+  }
+
+  .editorial-band {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
   .site-header {
     flex-direction: column;
     align-items: flex-start;

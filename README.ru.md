@@ -24,6 +24,7 @@ tgwebpr logs       # Ctrl+C → обратно в меню
 tgwebpr restart
 tgwebpr update     # git pull (если DNS ок) + rebuild
 tgwebpr site       # сменить HTML-шаблон
+tgwebpr carrier    # режим транспорта (websocket для Desktop)
 tgwebpr uninstall
 ```
 

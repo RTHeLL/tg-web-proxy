@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Studio Garden">
-  <rect width="64" height="64" rx="12" fill="#3d6b4f"/>
-  <path d="M32 48 C32 48 18 34 18 24 C18 18 24 14 32 22 C40 14 46 18 46 24 C46 34 32 48 32 48 Z" fill="#8fa88a"/>
-  <path d="M32 48 L32 56" stroke="#f6f4ef" stroke-width="2.5" stroke-linecap="round"/>
+  <rect width="64" height="64" rx="14" fill="#2d4a3e"/>
+  <ellipse cx="32" cy="38" rx="18" ry="12" fill="#d4ebe0" opacity="0.5"/>
+  <path d="M32 46 C32 46 16 30 16 22 C16 16 22 12 32 20 C42 12 48 16 48 22 C48 30 32 46 32 46 Z" fill="#7a9e8e"/>
+  <path d="M32 46 L32 54" stroke="#faf9f6" stroke-width="2.5" stroke-linecap="round"/>
 </svg>

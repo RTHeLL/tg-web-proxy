@@ -1,12 +1,14 @@
 :root {
-  --ink: #f2ebe3;
-  --muted: #a89888;
-  --bg: #14110f;
-  --panel: #1f1a17;
-  --copper: #c87941;
-  --ember: #8b4a2b;
-  --rule: #3a322c;
-  --font-display: "Georgia", "Times New Roman", serif;
+  --ink: #f5ebe0;
+  --muted: #9a8575;
+  --bg: #0c0a09;
+  --panel: #1c1917;
+  --panel-light: #292524;
+  --amber: #f59e0b;
+  --amber-deep: #d97706;
+  --espresso: #78350f;
+  --rule: #44403c;
+  --font-display: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-body: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
@@ -15,22 +17,25 @@
 }
 
 html {
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(245, 158, 11, 0.12) 0, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(120, 53, 15, 0.25) 0, transparent 45%),
+    var(--bg);
   color: var(--ink);
   min-height: 100%;
 }
 
 body {
   margin: 0 auto;
-  max-width: 56rem;
+  max-width: 68rem;
   min-height: 100vh;
-  padding: 2rem 1.35rem 3rem;
+  padding: 2rem 1.75rem 4rem;
   font-family: var(--font-body);
-  line-height: 1.58;
+  line-height: 1.55;
 }
 
 a {
-  color: var(--copper);
+  color: var(--amber);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.2em;
 }
@@ -41,127 +46,287 @@ a:hover {
 
 .site-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--rule);
-  margin-bottom: 2.5rem;
+  gap: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--rule);
+  margin-bottom: 3rem;
 }
 
 .mark {
   font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 400;
-  letter-spacing: 0.06em;
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
   text-transform: uppercase;
   color: var(--ink);
   text-decoration: none;
 }
 
+.mark span {
+  color: var(--amber);
+}
+
 nav {
   display: flex;
-  gap: 1.15rem;
-  font-size: 0.88rem;
-  letter-spacing: 0.08em;
+  gap: 1.5rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--muted);
 }
 
 .hero {
-  padding: 1rem 0 2rem;
+  margin-bottom: 3.5rem;
 }
 
 .eyebrow {
-  margin: 0 0 0.85rem;
+  margin: 0 0 1rem;
   font-size: 0.72rem;
-  letter-spacing: 0.2em;
+  font-weight: 700;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--copper);
+  color: var(--amber);
 }
 
 h1 {
-  margin: 0 0 1rem;
+  margin: 0 0 1.25rem;
   font-family: var(--font-display);
-  font-size: clamp(2rem, 5vw, 3rem);
-  line-height: 1.12;
-  font-weight: 400;
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  line-height: 0.95;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  max-width: 14ch;
 }
 
 h2 {
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .lede {
   margin: 0;
   max-width: 36rem;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   color: var(--muted);
+}
+
+.origins {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 3rem 0;
+}
+
+.origin-card {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--amber);
+  padding: 1.5rem;
+}
+
+.origin-tag {
+  margin: 0 0 0.75rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--amber-deep);
+}
+
+.origin-card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+  text-transform: uppercase;
+}
+
+.origin-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.94rem;
+}
+
+.process {
+  margin-bottom: 3rem;
+}
+
+.process-head {
+  margin-bottom: 2rem;
+}
+
+.process-head h2 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  text-transform: uppercase;
+}
+
+.process-head p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.timeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  position: relative;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  top: 1.35rem;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--espresso), var(--amber), var(--espresso));
+}
+
+.timeline-step {
+  position: relative;
+  padding: 0 0.75rem;
+  text-align: center;
+}
+
+.step-num {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0 auto 1rem;
+  background: var(--panel-light);
+  border: 2px solid var(--amber);
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--amber);
+}
+
+.timeline-step h3 {
+  margin: 0 0 0.45rem;
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.timeline-step p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.roast-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(90deg, var(--espresso), var(--amber-deep));
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.roast-bar p {
+  margin: 0;
+  color: #fff8f0;
+}
+
+.roast-bar span {
+  padding: 0.4rem 0.85rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 2px;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: 1rem;
+  margin-top: 2.5rem;
 }
 
 .card {
   background: var(--panel);
   border: 1px solid var(--rule);
-  padding: 1.25rem;
+  padding: 1.35rem;
 }
 
 .card h2 {
   margin: 0 0 0.55rem;
-  font-size: 1.1rem;
-  color: var(--copper);
+  font-size: 1rem;
+  color: var(--amber);
+  text-transform: uppercase;
 }
 
 .card p {
   margin: 0;
   color: var(--muted);
-  font-size: 0.96rem;
-}
-
-.roast-bar {
-  margin-top: 2.5rem;
-  padding: 1rem 1.25rem;
-  background: linear-gradient(90deg, var(--ember), var(--copper));
-  text-align: center;
-  font-size: 0.92rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.roast-bar p {
-  margin: 0;
-  color: #fff8f2;
+  font-size: 0.94rem;
 }
 
 .narrow {
-  max-width: 40rem;
+  max-width: 42rem;
 }
 
 .narrow h1 {
-  font-size: clamp(1.85rem, 4vw, 2.4rem);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  text-transform: uppercase;
 }
 
 .narrow h2 {
-  margin-top: 2rem;
-  font-size: 1.15rem;
-  color: var(--copper);
+  margin-top: 2.25rem;
+  font-size: 1.1rem;
+  color: var(--amber);
+  text-transform: uppercase;
 }
 
-.narrow ul {
+.narrow p,
+.narrow li {
   color: var(--muted);
+}
+
+.narrow ul,
+.narrow ol {
   padding-left: 1.25rem;
 }
 
+.spec-list {
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spec-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.94rem;
+}
+
+.spec-list li:last-child {
+  border-bottom: none;
+}
+
+.spec-list span:last-child {
+  font-weight: 700;
+  color: var(--amber);
+}
+
 .site-footer {
-  margin-top: 3.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--rule);
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--rule);
   color: var(--muted);
   font-size: 0.88rem;
 }
@@ -176,10 +341,11 @@ h2 {
 .footer-title {
   margin: 0 0 0.35rem;
   font-family: var(--font-display);
-  color: var(--ink);
-  letter-spacing: 0.04em;
+  font-weight: 800;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  font-size: 0.82rem;
+  color: var(--ink);
 }
 
 .footer-grid p {
@@ -191,9 +357,36 @@ h2 {
   font-size: 0.82rem;
 }
 
+@media (max-width: 900px) {
+  .origins {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  .timeline::before {
+    display: none;
+  }
+}
+
 @media (max-width: 640px) {
   .site-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  nav {
+    flex-wrap: wrap;
+  }
+
+  .timeline {
+    grid-template-columns: 1fr;
+  }
+
+  h1 {
+    max-width: none;
   }
 }

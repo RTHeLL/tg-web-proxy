@@ -1,5 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Northwind mark">
-  <rect width="64" height="64" rx="8" fill="#2f5d4a"/>
-  <path d="M12 44 L32 14 L52 44 Z" fill="none" stroke="#f3efe6" stroke-width="3"/>
-  <circle cx="32" cy="40" r="3.5" fill="#f3efe6"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Northwind Field">
+  <rect width="64" height="64" rx="6" fill="#3d2e24"/>
+  <rect x="8" y="36" width="48" height="12" rx="2" fill="#5a7344"/>
+  <rect x="14" y="28" width="10" height="20" rx="1" fill="#c4795a"/>
+  <rect x="27" y="22" width="10" height="26" rx="1" fill="#c4795a" opacity="0.85"/>
+  <rect x="40" y="30" width="10" height="18" rx="1" fill="#c4795a" opacity="0.7"/>
+  <circle cx="48" cy="16" r="6" fill="#e8dcc8"/>
 </svg>

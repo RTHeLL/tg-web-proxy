@@ -19,8 +19,9 @@
 	# `/` and `/api/v1/*`) keeps one public gateway for static or delegated
 	# application responses and the transport. No file_server or separate
 	# site route exposes different encoding, range, method, or proxy behavior.
-	# `encode` wraps every response identically.
-	encode zstd gzip
+	# `encode` applies only to the public site; carrier API bodies stay raw.
+	@site not path /api/*
+	encode @site zstd gzip
 	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
 	reverse_proxy 127.0.0.1:8080 {
 		transport http {
